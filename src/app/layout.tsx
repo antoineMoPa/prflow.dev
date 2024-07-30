@@ -8,7 +8,7 @@ import { NextUIProvider } from "@nextui-org/react";
 
 export const metadata: Metadata = {
     title: "Engmetrix",
-    description: "Engineering metrics for your team",
+    description: "Git metrics for your team",
     icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 

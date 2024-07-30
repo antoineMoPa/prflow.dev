@@ -3,7 +3,8 @@
 import { useState } from "react";
 
 import { api } from "../../trpc/react";
-import type { Post } from "@prisma/client";
+import { RepoStats } from "./RepoStats";
+import { SessionProvider } from "next-auth/react";
 
 export function LatestPost() {
     const [latestPost] = api.post.getLatest.useSuspenseQuery();
@@ -20,6 +21,9 @@ export function LatestPost() {
 
     return (
         <div className="w-full max-w-xs">
+            <SessionProvider>
+                <RepoStats/>
+            </SessionProvider>
             {latestPost ? (
                 <p className="truncate">Your most recent post: {latestPost.name}</p>
             ) : (
