@@ -1,6 +1,8 @@
 import { postRouter } from "../../server/api/routers/post";
 import { createCallerFactory, createTRPCRouter } from "../../server/api/trpc";
 import { githubRouter } from "./routers/github";
+import { githubTokenRouter } from "./routers/githubToken";
+import { teamRouter } from "./routers/team";
 
 /**
  * This is the primary router for your server.
@@ -9,7 +11,9 @@ import { githubRouter } from "./routers/github";
  */
 export const appRouter = createTRPCRouter({
     post: postRouter,
-    github: githubRouter
+    github: githubRouter,
+    githubToken: githubTokenRouter,
+    team: teamRouter,
 });
 
 // export type definition of API

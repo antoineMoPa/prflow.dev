@@ -1,9 +1,11 @@
 import Link from "next/link";
 
 import { LatestPost } from "./_components/post";
+import { GithubTokens } from "./_components/githubTokens";
 import { getServerAuthSession } from "../server/auth";
 import { api, HydrateClient } from "../trpc/server";
 import { Button } from "@nextui-org/button";
+import { Teams } from "./_components/Teams";
 
 export default async function Home() {
     const hello = await api.post.hello({ text: "from tRPC" });
@@ -61,7 +63,9 @@ export default async function Home() {
                         </div>
                     </div>
 
+                    {session?.user && <Teams />}
                     {session?.user && <LatestPost />}
+                    {session?.user && <GithubTokens />}
                 </div>
             </main>
         </HydrateClient>
