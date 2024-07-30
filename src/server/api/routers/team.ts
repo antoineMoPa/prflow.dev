@@ -34,6 +34,14 @@ export const teamRouter = createTRPCRouter({
         });
     }),
 
+    getAllMembers: protectedProcedure
+        .input(z.object({ teamId: z.number() }))
+        .query(async ({ input }) => {
+            return ctx.db.user.findMany({
+                where: { team: { id: input.teamId } },
+            });
+        }),
+
     getSecretMessage: protectedProcedure.query(() => {
         return "you can now see this secret message!";
     }),

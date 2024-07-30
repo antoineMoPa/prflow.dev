@@ -1,6 +1,6 @@
 import "../styles/globals.css";
 
-import { GeistSans } from "geist/font/sans";
+import "@fontsource/roboto";
 import { type Metadata } from "next";
 
 import { TRPCReactProvider } from "../trpc/react";
@@ -16,7 +16,7 @@ export default function RootLayout({
     children,
 }: Readonly<{ children: React.ReactNode }>) {
     return (
-        <html lang="en" className={`${GeistSans.variable}`}>
+        <html lang="en">
             <body>
                 <NextUIProvider>
                     <TRPCReactProvider>{children}</TRPCReactProvider>
