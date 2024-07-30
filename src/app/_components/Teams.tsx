@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { api } from "../../trpc/react";
 import { Input } from "@nextui-org/react";
+import { getSession } from "next-auth/react";
 
 export function Teams() {
     const [allTeams] = api.team.getAll.useSuspenseQuery();
