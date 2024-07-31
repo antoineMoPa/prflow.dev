@@ -57,7 +57,7 @@ function AuthTokens() {
                             <Button
                                 className="ml-2 mt-2"
                                 startContent={<FaRegTrashCan/>}
-                                onClick={() => deleteAuthToken.mutate({ id: authToken.id })}
+                                onClick={() => deleteAuthToken.mutate({ id: authToken.id, teamId })}
                             >
                                 Delete
                             </Button>
