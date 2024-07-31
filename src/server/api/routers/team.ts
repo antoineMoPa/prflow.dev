@@ -73,6 +73,50 @@ export const teamRouter = createTRPCRouter({
         });
     }),
 
+    getAllTokens: protectedProcedure
+        .input(z.object({
+            teamId: z.number(),
+        }))
+        .query(async ({ ctx, input }) => {
+            return ctx.db.authToken.findMany({
+                where: {
+                    teamId: input.teamId,
+                },
+                select: {
+                    name: true,
+                    id: true,
+                }
+            });
+        }),
+
+    createToken: protectedProcedure
+        .input(z.object({
+            name: z.string().min(1),
+            value: z.string().min(1),
+            teamId: z.number(),
+        }))
+        .mutation(async ({ ctx, input }) => {
+            // TODO: Check if user is team lead of this team
+            return ctx.db.authToken.create({
+                data: {
+                    name: input.name,
+                    value: input.value,
+                    teamId: input.teamId,
+                },
+            });
+        }),
+
+    deleteToken: protectedProcedure
+        .input(z.object({
+            id: z.number(),
+        }))
+        .mutation(async ({ ctx, input }) => {
+            return ctx.db.authToken.delete({
+                where: {
+                    id: input.id,
+                },
+            });
+        }),
 
     getSecretMessage: protectedProcedure.query(() => {
         return "you can now see this secret message!";

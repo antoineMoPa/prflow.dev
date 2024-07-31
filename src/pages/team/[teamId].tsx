@@ -8,7 +8,86 @@ import { Button, Input } from '@nextui-org/react';
 import React from 'react';
 import { FaRegTrashCan } from 'react-icons/fa6';
 
-//import { Teams } from "../../app/_components/Teams";
+function AuthTokens() {
+    const router = useRouter();
+    const teamId = parseInt(router.query.teamId);
+    const { data: allAuthTokens, refetch } = api.team.getAllTokens.useQuery({ teamId });
+
+    const utils = api.useUtils();
+    const [name, setName] = React.useState("");
+    const [value, setValue] = React.useState("");
+
+    const createAuthToken = api.team.createToken.useMutation({
+        onSuccess: async () => {
+            await utils.team.invalidate();
+            setName("");
+            setValue("");
+            refetch();
+        },
+    });
+
+    const deleteAuthToken = api.team.deleteToken.useMutation({
+        onSuccess: async () => {
+            await utils.team.invalidate();
+            refetch();
+        },
+    });
+
+    return (
+        <div>
+            <h2 className="text-xl">Github tokens</h2>
+            <ul className="my-5">
+                {allAuthTokens?.map((authToken)  => {
+                    return (
+                        <li key={authToken.id} className="flex">
+                            <div className="grow self-center">
+                                {authToken.name}
+                            </div>
+                            <Button
+                                className="ml-2 mt-2"
+                                startContent={<FaRegTrashCan/>}
+                                onClick={() => deleteAuthToken.mutate({ id: authToken.id })}
+                            >
+                                Delete
+                            </Button>
+                        </li>
+                    );
+                })}
+            </ul>
+            <form
+                onSubmit={(e) => {
+                    e.preventDefault();
+                    createAuthToken.mutate({ name, value, teamId });
+                }}
+                className="flex flex-col gap-2"
+            >
+                <div className="flex">
+                    <Input
+                        type="text"
+                        label="Name"
+                        onChange={(e) => setName(e.target.value)}
+                        value={name}
+                    />
+                    <Input
+                        type="text"
+                        label="Token"
+                        className="ml-5"
+                        onChange={(e) => setValue(e.target.value)}
+                        value={value}
+                    />
+                    <Button
+                        type="submit"
+                        className="ml-5 px-10 py-7"
+                        disabled={createAuthToken.isPending}
+                    >
+                        {createAuthToken.isPending ? "Submitting..." : "Add"}
+                    </Button>
+                </div>
+            </form>
+        </div>
+    );
+}
+
 
 function TeamEditor() {
     const router = useRouter();
@@ -34,8 +113,8 @@ function TeamEditor() {
     };
 
     return (
-        <div className="container flex justify-center">
-            <div className="container w-1/2">
+        <div className="mb-10">
+            <div>
                 <div className="container flex flex-col items-center justify-center py-8">
                     <h1 className="text-4xl font-extrabold tracking-tight text-center">
                         Edit Team {team?.name}
@@ -77,7 +156,6 @@ function TeamEditor() {
     );
 }
 
-
 function TeamEditorSuspense() {
     const session = useSession();
 
@@ -86,7 +164,10 @@ function TeamEditorSuspense() {
     }
 
     return (
-        <TeamEditor/>
+        <div className="container w-1/2">
+            <TeamEditor/>
+            <AuthTokens/>
+        </div>
     );
 }
 

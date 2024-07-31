@@ -14,27 +14,15 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Post {
-  id        Int      @id @default(autoincrement())
-  name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  createdBy   User   @relation(fields: [createdById], references: [id])
-  createdById String
-
-  @@index([name])
-}
-
 model Team {
-  id          Int           @id @default(autoincrement())
-  name        String
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  teamLead    User          @relation(fields: [teamLeadId], references: [id])
-  teamLeadId  String
-  TeamMember  TeamMember[]
-  GithubToken GithubToken[]
+  id         Int          @id @default(autoincrement())
+  name       String
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  teamLead   User         @relation(fields: [teamLeadId], references: [id])
+  teamLeadId String
+  TeamMember TeamMember[]
+  AuthToken  AuthToken[]
 
   @@index([name])
 }
@@ -51,9 +39,10 @@ model TeamMember {
   @@index([githubUserName])
 }
 
-model GithubToken {
+model AuthToken {
   id        Int      @id @default(autoincrement())
   name      String
+  type      String   @default("github")
   value     String
   updatedAt DateTime @updatedAt
 
@@ -99,7 +88,6 @@ model User {
   image         String?
   accounts      Account[]
   sessions      Session[]
-  posts         Post[]
   Team          Team[]
 }
 
