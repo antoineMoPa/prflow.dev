@@ -37,7 +37,7 @@ export const teamRouter = createTRPCRouter({
             const team: Team = await ctx.db.team.findFirst({
                 where: {
                     teamLead: { id: currentUserId },
-                    id: teamId as number,
+                    id: input.teamId,
                 },
             });
 
@@ -61,7 +61,7 @@ export const teamRouter = createTRPCRouter({
             const team: Team = await ctx.db.team.findFirst({
                 where: {
                     teamLead: { id: currentUserId },
-                    id: teamId as number,
+                    id: input.teamId,
                 },
             });
 
@@ -90,7 +90,7 @@ export const teamRouter = createTRPCRouter({
             const team: Team = await ctx.db.team.findFirst({
                 where: {
                     teamLead: { id: currentUserId },
-                    id: teamId as number,
+                    id: input.teamId,
                 },
             });
 
@@ -107,7 +107,7 @@ export const teamRouter = createTRPCRouter({
 
     getAll: protectedProcedure.query(async ({ ctx }) => {
         return ctx.db.team.findMany({
-            where: { teamLead: { id: ctx } },
+            where: { teamLead: { id: ctx.session.user.id } },
         });
     }),
 
@@ -121,7 +121,7 @@ export const teamRouter = createTRPCRouter({
             const team: Team = await ctx.db.team.findFirst({
                 where: {
                     teamLead: { id: currentUserId },
-                    id: teamId as number,
+                    id: input.teamId,
                 },
             });
 
@@ -155,7 +155,7 @@ export const teamRouter = createTRPCRouter({
             const team: Team = await ctx.db.team.findFirst({
                 where: {
                     teamLead: { id: currentUserId },
-                    id: teamId as number,
+                    id: input.teamId,
                 },
             });
 
@@ -184,7 +184,7 @@ export const teamRouter = createTRPCRouter({
             const team: Team = await ctx.db.team.findFirst({
                 where: {
                     teamLead: { id: currentUserId },
-                    id: teamId as number,
+                    id: input.teamId,
                 },
             });
 

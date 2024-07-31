@@ -54,6 +54,7 @@ export function Teams() {
                 <Button
                     className="ml-2 self-center p-7"
                     disabled={createTeam.isPending}
+                    onClick={() => createTeam.mutate({ name })}
                 >
                     {createTeam.isPending ? "Submitting..." : "Add"}
                 </Button>
