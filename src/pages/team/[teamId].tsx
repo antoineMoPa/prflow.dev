@@ -4,9 +4,10 @@ import { useRouter } from 'next/router';
 import Layout from '~/app/_components/Layout';
 import { api } from '../../trpc/react';
 import { useSession } from 'next-auth/react';
-import { Button, Input } from '@nextui-org/react';
+import { Button, Input, Select, SelectItem } from '@nextui-org/react';
 import React from 'react';
 import { FaRegTrashCan } from 'react-icons/fa6';
+import Link from 'next/link';
 
 function AuthTokens() {
     const router = useRouter();
@@ -14,8 +15,9 @@ function AuthTokens() {
     const { data: allAuthTokens, refetch } = api.team.getAllTokens.useQuery({ teamId });
 
     const utils = api.useUtils();
-    const [name, setName] = React.useState("");
+    const [name, setName] = React.useState("team token");
     const [value, setValue] = React.useState("");
+    const [tokenType, setTokenType] = React.useState("github");
 
     const createAuthToken = api.team.createToken.useMutation({
         onSuccess: async () => {
@@ -35,13 +37,22 @@ function AuthTokens() {
 
     return (
         <div>
-            <h2 className="text-xl">Github tokens</h2>
+            <h2 className="text-xl">Authentication tokens</h2>
+            <p>
+                Generate a github authentication token here:&nbsp;
+                <Link
+                    href="https://github.com/settings/tokens"
+                    className="text-blue-500"
+                    target="_blank">
+                    github.com/settings/tokens
+                </Link>
+            </p>
             <ul className="my-5">
                 {allAuthTokens?.map((authToken)  => {
                     return (
                         <li key={authToken.id} className="flex">
                             <div className="grow self-center">
-                                {authToken.name}
+                                {authToken.name} - {authToken.type} token
                             </div>
                             <Button
                                 className="ml-2 mt-2"
@@ -57,7 +68,7 @@ function AuthTokens() {
             <form
                 onSubmit={(e) => {
                     e.preventDefault();
-                    createAuthToken.mutate({ name, value, teamId });
+                    createAuthToken.mutate({ name, value, teamId, type: tokenType });
                 }}
                 className="flex flex-col gap-2"
             >
@@ -75,6 +86,14 @@ function AuthTokens() {
                         onChange={(e) => setValue(e.target.value)}
                         value={value}
                     />
+                    <Select
+                        selectedKeys={[tokenType]}
+                        className="ml-5"
+                        label="Token Type"
+                        onChange={(e) => setTokenType(e.target.value)}
+                    >
+                       <SelectItem key="github">GitHub</SelectItem>
+                    </Select>
                     <Button
                         type="submit"
                         className="ml-5 px-10 py-7"

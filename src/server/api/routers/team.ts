@@ -85,6 +85,7 @@ export const teamRouter = createTRPCRouter({
                 select: {
                     name: true,
                     id: true,
+                    type: true,
                 }
             });
         }),
@@ -94,6 +95,7 @@ export const teamRouter = createTRPCRouter({
             name: z.string().min(1),
             value: z.string().min(1),
             teamId: z.number(),
+            type: z.string().regex(/github/),
         }))
         .mutation(async ({ ctx, input }) => {
             // TODO: Check if user is team lead of this team
@@ -102,6 +104,7 @@ export const teamRouter = createTRPCRouter({
                     name: input.name,
                     value: input.value,
                     teamId: input.teamId,
+                    type: input.type,
                 },
             });
         }),
