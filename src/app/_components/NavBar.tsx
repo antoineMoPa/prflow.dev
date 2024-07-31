@@ -7,7 +7,7 @@ import {
   NavbarItem,
 } from "@nextui-org/navbar";
 import { Link, Button } from "@nextui-org/react";
-import { getSession, SessionProvider, useSession } from "next-auth/react";
+import { SessionProvider, useSession } from "next-auth/react";
 
 import React from "react";
 

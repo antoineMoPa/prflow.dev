@@ -4,7 +4,7 @@ import Layout from '~/app/_components/Layout';
 import { useSession } from 'next-auth/react';
 import { useState } from "react";
 import { api } from "../trpc/react";
-import { Button, Input, Link } from "@nextui-org/react";
+import { Button, Input } from "@nextui-org/react";
 
 export function Teams() {
     const [allTeams] = api.team.getAll.useSuspenseQuery();

@@ -1,4 +1,3 @@
-import { getServerAuthSession } from "../server/auth";
 import { HydrateClient } from "../trpc/server";
 import NavBar from "./_components/NavBar";
 

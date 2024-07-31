@@ -24,14 +24,14 @@ function AuthTokens() {
             await utils.team.invalidate();
             setName("");
             setValue("");
-            refetch();
+            await refetch();
         },
     });
 
     const deleteAuthToken = api.team.deleteToken.useMutation({
         onSuccess: async () => {
             await utils.team.invalidate();
-            refetch();
+            await refetch();
         },
     });
 
@@ -111,7 +111,7 @@ function AuthTokens() {
 function TeamEditor() {
     const router = useRouter();
     const teamId = parseInt(router.query.teamId);
-    const team = api.team.get.useQuery({ id: teamId }).data;
+    const { data: team } = api.team.get.useQuery({ id: teamId });
     const { data: members, refetch } = api.team.getTeamMembers.useQuery({ teamId });
     const addTeamMember = api.team.addTeamMember.useMutation();
     const deleteTeamMember = api.team.deleteTeamMember.useMutation();
@@ -123,12 +123,12 @@ function TeamEditor() {
         }
         await addTeamMember.mutateAsync({ teamId, githubUserName: memberGithubUserName });
         setMemberGithubUserName("");
-        refetch();
+        await refetch();
     };
 
-    const deleteMember = async (memberId) => {
-        await deleteTeamMember.mutateAsync({ memberId });
-        refetch();
+    const deleteMember = async (memberId: number) => {
+        await deleteTeamMember.mutateAsync({ memberId, teamId });
+        await refetch();
     };
 
     return (
