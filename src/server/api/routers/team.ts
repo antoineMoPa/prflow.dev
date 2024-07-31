@@ -26,21 +26,43 @@ export const teamRouter = createTRPCRouter({
             });
         }),
 
-    getAll: protectedProcedure.query(async ({ ctx }) => {
-        return ctx.db.team.findMany({
-            // TODO Filter by team
-            // TODO Redact token
-            // where: { createdBy: { id: ctx.session.user.id } },
+    get: protectedProcedure.query(async ({ ctx, id }) => {
+        return ctx.db.team.findFirst({
+            where: {
+                teamLead: { id: ctx.session.user.id },
+                id,
+            },
         });
     }),
 
-    getAllMembers: protectedProcedure
+    getTeamMembers: protectedProcedure
         .input(z.object({ teamId: z.number() }))
-        .query(async ({ input }) => {
-            return ctx.db.user.findMany({
-                where: { team: { id: input.teamId } },
+        .query(async ({ ctx, input }) => {
+        return ctx.db.teamMember.findMany({
+            where: {
+                team: { id: input.teamId }
+            },
+        })
+    }),
+
+    addTeamMember: protectedProcedure
+        .input(z.object({ teamId: z.number() }))
+        .input(z.object({ githubUserName: z.string().min(1) }))
+        .mutation(async ({ ctx, input }) => {
+            return ctx.db.teamMember.create({
+                data: {
+                    team: { connect: { id: input.teamId } },
+                    githubUserName: input.githubUserName,
+                },
             });
         }),
+
+    getAll: protectedProcedure.query(async ({ ctx }) => {
+        return ctx.db.team.findMany({
+            where: { teamLead: { id: ctx.session.user.id } },
+        });
+    }),
+
 
     getSecretMessage: protectedProcedure.query(() => {
         return "you can now see this secret message!";

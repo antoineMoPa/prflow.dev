@@ -3,8 +3,7 @@
 import { useState } from "react";
 
 import { api } from "../../trpc/react";
-import { Input } from "@nextui-org/react";
-import { getSession } from "next-auth/react";
+import { Input, Link } from "@nextui-org/react";
 
 export function Teams() {
     const [allTeams] = api.team.getAll.useSuspenseQuery();
@@ -25,7 +24,11 @@ export function Teams() {
             <ul>
                 {allTeams.map((team)  => {
                     return (
-                        <li key={team.id}>{team.name}</li>
+                        <li key={team.id}>
+                            <Link href={`/team/${team.id}`}>
+                                {team.name}
+                            </Link>
+                        </li>
                     );
                 })}
             </ul>

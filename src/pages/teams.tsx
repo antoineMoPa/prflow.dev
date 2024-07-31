@@ -1,11 +1,10 @@
-import { useRouter } from 'next/router';
 import Layout from '~/app/_components/Layout';
-import { getSession, useSession } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import { Teams } from '~/app/_components/Teams';
 
 //import { Teams } from "../../app/_components/Teams";
 
-function TeamPage() {
+function TeamsPage() {
     const session = useSession();
 
     return (
@@ -21,12 +20,10 @@ function TeamPage() {
 }
 
 export default function Team() {
-    const router = useRouter();
-    const { teamId } = router.query;
 
     return (
         <Layout>
-            <TeamPage />
+            <TeamsPage />
         </Layout>
     );
 }
