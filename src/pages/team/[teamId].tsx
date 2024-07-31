@@ -17,7 +17,7 @@ function TeamEditor() {
     const { data: members, refetch } = api.team.getTeamMembers.useQuery({ teamId });
     const addTeamMember = api.team.addTeamMember.useMutation();
     const deleteTeamMember = api.team.deleteTeamMember.useMutation();
-    const [memberGithubUserName, setMemberGithubUserName] = React.useState("@username");
+    const [memberGithubUserName, setMemberGithubUserName] = React.useState("");
 
     const addMember = async () => {
         if (!memberGithubUserName) {
@@ -37,12 +37,12 @@ function TeamEditor() {
         <div className="container flex justify-center">
             <div className="container w-1/2">
                 <div className="container flex flex-col items-center justify-center py-8">
-                    <h1 className="text-2xl font-extrabold tracking-tight text-center">
+                    <h1 className="text-4xl font-extrabold tracking-tight text-center">
                         Edit Team {team?.name}
                     </h1>
                 </div>
                 <h2 className="text-xl">Members</h2>
-                <ul className="my-10">
+                <ul className="my-5">
                     {members?.map((member) => (
                         <li key={member.id} className="flex">
                             <div className="grow self-center">
@@ -62,10 +62,11 @@ function TeamEditor() {
                     <Input
                         onChange={(e) => setMemberGithubUserName(e.target.value)}
                         value={memberGithubUserName}
+                        label="@username"
                         className="grow self-center"
                     />
                     <Button
-                        className="ml-2"
+                        className="ml-2 self-center p-7"
                         onClick={addMember}
                     >
                         Add
@@ -92,7 +93,7 @@ function TeamEditorSuspense() {
 export default function Team() {
     return (
         <Layout>
-            <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c] text-white">
+            <main className="flex min-h-screen flex-col items-center bg-gradient-to-b from-[#2e026d] to-[#15162c] text-white">
                 <TeamEditorSuspense />
             </main>
         </Layout>
