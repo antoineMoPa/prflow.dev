@@ -11,7 +11,7 @@ import Link from 'next/link';
 
 function AuthTokens() {
     const router = useRouter();
-    const teamId = parseInt(router.query.teamId);
+    const teamId = parseInt(router.query.teamId as string);
     const { data: allAuthTokens, refetch } = api.team.getAllTokens.useQuery({ teamId });
 
     const utils = api.useUtils();
@@ -110,7 +110,7 @@ function AuthTokens() {
 
 function TeamEditor() {
     const router = useRouter();
-    const teamId = parseInt(router.query.teamId);
+    const teamId = parseInt(router.query.teamId as string);
     const { data: team } = api.team.get.useQuery({ id: teamId });
     const { data: members, refetch } = api.team.getTeamMembers.useQuery({ teamId });
     const addTeamMember = api.team.addTeamMember.useMutation();
