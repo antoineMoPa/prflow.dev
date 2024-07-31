@@ -15,6 +15,7 @@ function TeamEditor() {
     const team = api.team.get.useQuery({ id: teamId }).data;
     const { data: members, refetch } = api.team.getTeamMembers.useQuery({ teamId });
     const addTeamMember = api.team.addTeamMember.useMutation();
+    const deleteTeamMember = api.team.deleteTeamMember.useMutation();
     const [memberGithubUserName, setMemberGithubUserName] = React.useState("");
 
     const addMember = async () => {
@@ -23,18 +24,33 @@ function TeamEditor() {
         refetch();
     };
 
+    const deleteMember = async (memberId) => {
+        await deleteTeamMember.mutateAsync({ memberId });
+        refetch();
+    };
+
     return (
         <div className="container flex justify-center">
             <div className="container w-1/2">
-                <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16">
+                <div className="container flex flex-col items-center justify-center py-8">
                     <h1 className="text-5xl font-extrabold tracking-tight sm:text-[5rem] text-center">
                         Edit Team {team?.name}
                     </h1>
                 </div>
-                <h2>Members</h2>
-                <ul>
+                <h2 className="text-4xl">Members</h2>
+                <ul className="my-10">
                     {members?.map((member) => (
-                        <li key={member.id}>{member.githubUserName}</li>
+                        <li key={member.id} className="flex">
+                            <div className="grow self-center">
+                                {member.githubUserName}
+                            </div>
+                            <Button
+                                className="ml-2"
+                                onClick={() => deleteMember(member.id)}
+                            >
+                                Delete
+                            </Button>
+                        </li>
                     ))}
                 </ul>
                 <Input
