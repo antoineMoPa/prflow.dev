@@ -6,6 +6,7 @@ import { api } from '../../trpc/react';
 import { useSession } from 'next-auth/react';
 import { Button, Input } from '@nextui-org/react';
 import React from 'react';
+import { FaRegTrashCan } from 'react-icons/fa6';
 
 //import { Teams } from "../../app/_components/Teams";
 
@@ -16,9 +17,12 @@ function TeamEditor() {
     const { data: members, refetch } = api.team.getTeamMembers.useQuery({ teamId });
     const addTeamMember = api.team.addTeamMember.useMutation();
     const deleteTeamMember = api.team.deleteTeamMember.useMutation();
-    const [memberGithubUserName, setMemberGithubUserName] = React.useState("");
+    const [memberGithubUserName, setMemberGithubUserName] = React.useState("@username");
 
     const addMember = async () => {
+        if (!memberGithubUserName) {
+            return;
+        }
         await addTeamMember.mutateAsync({ teamId, githubUserName: memberGithubUserName });
         setMemberGithubUserName("");
         refetch();
@@ -33,11 +37,11 @@ function TeamEditor() {
         <div className="container flex justify-center">
             <div className="container w-1/2">
                 <div className="container flex flex-col items-center justify-center py-8">
-                    <h1 className="text-5xl font-extrabold tracking-tight sm:text-[5rem] text-center">
+                    <h1 className="text-2xl font-extrabold tracking-tight text-center">
                         Edit Team {team?.name}
                     </h1>
                 </div>
-                <h2 className="text-4xl">Members</h2>
+                <h2 className="text-xl">Members</h2>
                 <ul className="my-10">
                     {members?.map((member) => (
                         <li key={member.id} className="flex">
@@ -45,7 +49,8 @@ function TeamEditor() {
                                 {member.githubUserName}
                             </div>
                             <Button
-                                className="ml-2"
+                                className="ml-2 mt-2"
+                                startContent={<FaRegTrashCan/>}
                                 onClick={() => deleteMember(member.id)}
                             >
                                 Delete
@@ -53,18 +58,19 @@ function TeamEditor() {
                         </li>
                     ))}
                 </ul>
-                <Input
-                    placeholder="@username"
-                    onChange={(e) => setMemberGithubUserName(e.target.value)}
-                    value={memberGithubUserName}
-                    className="mt-5"
-                />
-                <Button
-                    className="mt-5"
-                    onClick={addMember}
-                >
-                    Add
-                </Button>
+                <div className="flex my-2 mb-5">
+                    <Input
+                        onChange={(e) => setMemberGithubUserName(e.target.value)}
+                        value={memberGithubUserName}
+                        className="grow self-center"
+                    />
+                    <Button
+                        className="ml-2"
+                        onClick={addMember}
+                    >
+                        Add
+                    </Button>
+                </div>
             </div>
         </div>
     );
