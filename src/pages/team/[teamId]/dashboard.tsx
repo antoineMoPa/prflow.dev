@@ -4,105 +4,28 @@ import { useRouter } from 'next/router';
 import Layout from '~/app/_components/Layout';
 import { api } from '../../../trpc/react';
 import { useSession } from 'next-auth/react';
-import { Button, Input, Select, SelectItem } from '@nextui-org/react';
 import React from 'react';
-import { FaRegTrashCan } from 'react-icons/fa6';
-import Link from 'next/link';
 
 function AuthTokens() {
     const router = useRouter();
     const teamId = parseInt(router.query.teamId as string);
-    const { data: allAuthTokens, refetch } = api.team.getAllTokens.useQuery({ teamId });
 
-    const utils = api.useUtils();
-    const [name, setName] = React.useState("team token");
-    const [value, setValue] = React.useState("");
-    const [tokenType, setTokenType] = React.useState("github");
-
-    const createAuthToken = api.team.createToken.useMutation({
-        onSuccess: async () => {
-            await utils.team.invalidate();
-            setName("");
-            setValue("");
-            await refetch();
-        },
-    });
-
-    const deleteAuthToken = api.team.deleteToken.useMutation({
-        onSuccess: async () => {
-            await utils.team.invalidate();
-            await refetch();
-        },
-    });
+    const { data: stats } = api.teamDashboard.getDashboardStats.useQuery({ teamId });
 
     return (
         <div className="p-5 m-5 rounded-md border-solid border-2 border-indigo-900">
-            <h2 className="text-xl">Authentication tokens</h2>
-            <p>
-                Generate a github authentication token here:&nbsp;
-                <Link
-                    href="https://github.com/settings/tokens"
-                    className="text-blue-500"
-                    target="_blank">
-                    github.com/settings/tokens
-                </Link>
-            </p>
+            <h2 className="text-xl">Members</h2>
             <ul className="my-5">
-                {allAuthTokens?.map((authToken)  => {
+                {stats?.teamMembers?.map((member)  => {
                     return (
-                        <li key={authToken.id} className="flex">
+                        <li key={member.id} className="flex">
                             <div className="grow self-center">
-                                {authToken.name} - {authToken.type} token
+                                {member.githubUserName}
                             </div>
-                            <Button
-                                className="ml-2 mt-2"
-                                startContent={<FaRegTrashCan/>}
-                                onClick={() => deleteAuthToken.mutate({ id: authToken.id, teamId })}
-                            >
-                                Delete
-                            </Button>
                         </li>
                     );
                 })}
             </ul>
-            <form
-                onSubmit={(e) => {
-                    e.preventDefault();
-                    createAuthToken.mutate({ name, value, teamId, type: tokenType });
-                }}
-                className="flex flex-col gap-2"
-            >
-                <div className="flex">
-                    <Input
-                        type="text"
-                        label="Name"
-                        onChange={(e) => setName(e.target.value)}
-                        value={name}
-                    />
-                    <Input
-                        type="text"
-                        label="Token"
-                        className="ml-5"
-                        onChange={(e) => setValue(e.target.value)}
-                        value={value}
-                    />
-                    <Select
-                        selectedKeys={[tokenType]}
-                        className="ml-5"
-                        label="Token Type"
-                        onChange={(e) => setTokenType(e.target.value)}
-                    >
-                       <SelectItem key="github">GitHub</SelectItem>
-                    </Select>
-                    <Button
-                        type="submit"
-                        className="ml-5 px-10 py-7"
-                        disabled={createAuthToken.isPending}
-                    >
-                        {createAuthToken.isPending ? "Submitting..." : "Add"}
-                    </Button>
-                </div>
-            </form>
         </div>
     );
 }

@@ -262,7 +262,7 @@ function DangerZone() {
                 <h2 className="text-xl">Danger Zone</h2>
             </div>
             <div className="flex my-2 mb-5">
-                <div class="flex-grow">
+                <div className="flex-grow">
                     <p>
                         Delete team, including team members and token.
                     </p>

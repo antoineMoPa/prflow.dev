@@ -29,7 +29,7 @@ export function Teams() {
                 {allTeams.map((team)  => {
                     return (
                         <li key={team.id}>
-                            <div href={`/team/${team.id}`} className="flex grow justify-center mb-5">
+                            <div className="flex grow justify-center mb-5">
                                 <div className="flex-grow">
                                     {team.name}
                                 </div>
