@@ -240,6 +240,44 @@ function TeamEditor() {
     );
 }
 
+function DangerZone() {
+    const router = useRouter();
+    const teamId = parseInt(router.query.teamId as string);
+    const deleteTeam = api.team.delete.useMutation();
+
+    const deleteThisTeam = async () => {
+        await deleteTeam.mutateAsync({ id: teamId });
+        await router.push("/teams");
+    };
+
+    const deleteWithConfirmation = async () => {
+        if (confirm("Are you sure you want to delete this team?")) {
+            await deleteThisTeam();
+        }
+    };
+
+    return (
+        <div className="p-5 m-5 rounded-md border-solid border-2 border-red-900">
+            <div>
+                <h2 className="text-xl">Danger Zone</h2>
+            </div>
+            <div className="flex my-2 mb-5">
+                <div class="flex-grow">
+                    <p>
+                        Delete team, including team members and token.
+                    </p>
+                </div>
+                <Button
+                    className="ml-2 p-7 bg-red-500 text-white"
+                    onClick={deleteWithConfirmation}
+                >
+                    Delete this team
+                </Button>
+            </div>
+        </div>
+    );
+}
+
 function TeamEditorSuspense() {
     const session = useSession();
 
@@ -254,6 +292,8 @@ function TeamEditorSuspense() {
             <GithubRepositoriesEditor/>
             <div className="my-10"></div>
             <AuthTokens/>
+            <div className="my-10"></div>
+            <DangerZone/>
         </div>
     );
 }

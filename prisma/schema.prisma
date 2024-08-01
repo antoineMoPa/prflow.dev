@@ -34,7 +34,7 @@ model TeamMember {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  team   Team @relation(fields: [teamId], references: [id])
+  team   Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
   teamId Int
 
   @@index([githubUserName])
@@ -46,7 +46,7 @@ model GithubRepository {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  team   Team @relation(fields: [teamId], references: [id])
+  team   Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
   teamId Int
 
   @@index([path])
@@ -59,7 +59,7 @@ model AuthToken {
   value     String
   updatedAt DateTime @updatedAt
 
-  team   Team @relation(fields: [teamId], references: [id])
+  team   Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
   teamId Int
 
   @@index([name])
