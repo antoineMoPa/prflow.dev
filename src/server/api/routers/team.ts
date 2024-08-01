@@ -20,11 +20,13 @@ export const teamRouter = createTRPCRouter({
             });
         }),
 
-    get: protectedProcedure.query(async ({ ctx, id }) => {
+    get: protectedProcedure
+        .input(z.object({ id: z.number() }))
+        .query(async ({ ctx, input }) => {
         return ctx.db.team.findFirst({
             where: {
-                teamLead: { id: ctx.session.user.id as number },
-                id: id as number,
+                teamLead: { id: ctx.session.user.id },
+                id: input.id,
             },
         });
     }),
@@ -32,9 +34,9 @@ export const teamRouter = createTRPCRouter({
     getTeamMembers: protectedProcedure
         .input(z.object({ teamId: z.number() }))
         .query(async ({ ctx, input }) => {
-            const currentUserId: number = ctx.session.user.id;
+            const currentUserId: string = ctx.session.user.id;
 
-            const team: Team = await ctx.db.team.findFirst({
+            const team: Team | null = await ctx.db.team.findFirst({
                 where: {
                     teamLead: { id: currentUserId },
                     id: input.teamId,
@@ -56,9 +58,9 @@ export const teamRouter = createTRPCRouter({
         .input(z.object({ teamId: z.number() }))
         .input(z.object({ githubUserName: z.string().min(1) }))
         .mutation(async ({ ctx, input }) => {
-            const currentUserId: number = ctx.session.user.id;
+            const currentUserId: string = ctx.session.user.id;
 
-            const team: Team = await ctx.db.team.findFirst({
+            const team: Team | null = await ctx.db.team.findFirst({
                 where: {
                     teamLead: { id: currentUserId },
                     id: input.teamId,
@@ -85,9 +87,9 @@ export const teamRouter = createTRPCRouter({
         .input(z.object({ memberId: z.number() }))
         .input(z.object({ teamId: z.number() }))
         .mutation(async ({ ctx, input }) => {
-            const currentUserId: number = ctx.session.user.id;
+            const currentUserId: string = ctx.session.user.id;
 
-            const team: Team = await ctx.db.team.findFirst({
+            const team: Team | null = await ctx.db.team.findFirst({
                 where: {
                     teamLead: { id: currentUserId },
                     id: input.teamId,
@@ -116,9 +118,9 @@ export const teamRouter = createTRPCRouter({
             teamId: z.number(),
         }))
         .query(async ({ ctx, input }) => {
-            const currentUserId: number = ctx.session.user.id;
+            const currentUserId: string = ctx.session.user.id;
 
-            const team: Team = await ctx.db.team.findFirst({
+            const team: Team | null = await ctx.db.team.findFirst({
                 where: {
                     teamLead: { id: currentUserId },
                     id: input.teamId,
@@ -150,9 +152,9 @@ export const teamRouter = createTRPCRouter({
             type: z.string().regex(/github/),
         }))
         .mutation(async ({ ctx, input }) => {
-            const currentUserId: number = ctx.session.user.id;
+            const currentUserId: string = ctx.session.user.id;
 
-            const team: Team = await ctx.db.team.findFirst({
+            const team: Team | null = await ctx.db.team.findFirst({
                 where: {
                     teamLead: { id: currentUserId },
                     id: input.teamId,
@@ -179,9 +181,9 @@ export const teamRouter = createTRPCRouter({
             teamId: z.number(),
         }))
         .mutation(async ({ ctx, input }) => {
-            const currentUserId: number = ctx.session.user.id;
+            const currentUserId: string = ctx.session.user.id;
 
-            const team: Team = await ctx.db.team.findFirst({
+            const team: Team | null = await ctx.db.team.findFirst({
                 where: {
                     teamLead: { id: currentUserId },
                     id: input.teamId,
