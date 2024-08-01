@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useState } from "react";
 import { api } from "../trpc/react";
 import { Button, Input } from "@nextui-org/react";
+import { FaGear, FaChartLine } from 'react-icons/fa6';
 
 export function Teams() {
     const [allTeams] = api.team.getAll.useSuspenseQuery();
@@ -28,11 +29,21 @@ export function Teams() {
                 {allTeams.map((team)  => {
                     return (
                         <li key={team.id}>
-                            <a href={`/team/${team.id}`} className="flex grow justify-center mb-5">
-                                <Button className="justify-center">
+                            <div href={`/team/${team.id}`} className="flex grow justify-center mb-5">
+                                <div className="flex-grow">
                                     {team.name}
-                                </Button>
-                            </a>
+                                </div>
+                                <a href={`/team/${team.id}/dashboard`} >
+                                    <Button startContent={<FaChartLine/>} className="mr-5 bg-blue-700 text-white">
+                                        Dashboard
+                                    </Button>
+                                </a>
+                                <a href={`/team/${team.id}/settings`} >
+                                    <Button startContent={<FaGear/>}>
+                                        Team Settings
+                                    </Button>
+                                </a>
+                            </div>
                         </li>
                     );
                 })}

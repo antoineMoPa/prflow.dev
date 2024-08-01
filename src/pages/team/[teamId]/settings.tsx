@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/router';
 import Layout from '~/app/_components/Layout';
-import { api } from '../../trpc/react';
+import { api } from '../../../trpc/react';
 import { useSession } from 'next-auth/react';
 import { Button, Input, Select, SelectItem } from '@nextui-org/react';
 import React from 'react';
