@@ -9,6 +9,77 @@ import React from 'react';
 import { FaRegTrashCan } from 'react-icons/fa6';
 import Link from 'next/link';
 
+function GithubRepositoriesEditor() {
+    const router = useRouter();
+    const teamId = parseInt(router.query.teamId as string);
+    const { data: allGithubRepositories, refetch } = api.team.getAllGithubRepositories.useQuery({ teamId });
+
+    const utils = api.useUtils();
+    const [path, setPath] = React.useState("");
+
+    const addGithubRepository = api.team.addGithubRepository.useMutation({
+        onSuccess: async () => {
+            await utils.team.invalidate();
+            setPath("");
+            await refetch();
+        },
+    });
+
+    const deleteGithubRepository = api.team.deleteGithubRepository.useMutation({
+        onSuccess: async () => {
+            await utils.team.invalidate();
+            await refetch();
+        },
+    });
+
+    return (
+        <div className="p-5 m-5 rounded-md border-solid border-2 border-indigo-900">
+            <h2 className="text-xl">Github Repositories</h2>
+            <ul className="my-5">
+                {allGithubRepositories?.map((githubRepo)  => {
+                    return (
+                        <li key={githubRepo.id} className="flex">
+                            <div className="grow self-center">
+                                {githubRepo.path}
+                            </div>
+                            <Button
+                                className="ml-2 mt-2"
+                                startContent={<FaRegTrashCan/>}
+                                onClick={() => deleteGithubRepository.mutate({ id: githubRepo.id, teamId })}
+                            >
+                                Delete
+                            </Button>
+                        </li>
+                    );
+                })}
+            </ul>
+            <form
+                onSubmit={(e) => {
+                    e.preventDefault();
+                    addGithubRepository.mutate({ path, teamId });
+                }}
+                className="flex flex-col gap-2"
+            >
+                <div className="flex">
+                    <Input
+                        type="text"
+                        label="org/repoName"
+                        onChange={(e) => setPath(e.target.value)}
+                        value={path}
+                    />
+                    <Button
+                        type="submit"
+                        className="ml-5 px-10 py-7"
+                        disabled={addGithubRepository.isPending}
+                    >
+                        {addGithubRepository.isPending ? "Submitting..." : "Add"}
+                    </Button>
+                </div>
+            </form>
+        </div>
+    );
+}
+
 function AuthTokens() {
     const router = useRouter();
     const teamId = parseInt(router.query.teamId as string);
@@ -36,7 +107,7 @@ function AuthTokens() {
     });
 
     return (
-        <div>
+        <div className="p-5 m-5 rounded-md border-solid border-2 border-indigo-900">
             <h2 className="text-xl">Authentication tokens</h2>
             <p>
                 Generate a github authentication token here:&nbsp;
@@ -111,7 +182,6 @@ function AuthTokens() {
 function TeamEditor() {
     const router = useRouter();
     const teamId = parseInt(router.query.teamId as string);
-    const { data: team } = api.team.get.useQuery({ id: teamId });
     const { data: members, refetch } = api.team.getTeamMembers.useQuery({ teamId });
     const addTeamMember = api.team.addTeamMember.useMutation();
     const deleteTeamMember = api.team.deleteTeamMember.useMutation();
@@ -132,13 +202,8 @@ function TeamEditor() {
     };
 
     return (
-        <div className="mb-10">
+        <div className="p-5 m-5 rounded-md border-solid border-2 border-indigo-900">
             <div>
-                <div className="container flex flex-col items-center justify-center py-8">
-                    <h1 className="text-4xl font-extrabold tracking-tight text-center">
-                        Edit Team {team?.name}
-                    </h1>
-                </div>
                 <h2 className="text-xl">Members</h2>
                 <ul className="my-5">
                     {members?.map((member) => (
@@ -185,6 +250,9 @@ function TeamEditorSuspense() {
     return (
         <div className="container w-1/2">
             <TeamEditor/>
+            <div className="my-10"></div>
+            <GithubRepositoriesEditor/>
+            <div className="my-10"></div>
             <AuthTokens/>
         </div>
     );
@@ -194,6 +262,12 @@ export default function Team() {
     return (
         <Layout>
             <main className="flex min-h-screen flex-col items-center bg-gradient-to-b from-[#2e026d] to-[#15162c] text-white">
+                <div className="container flex flex-col items-center justify-center pb-8 mt-10">
+                    <h1 className="text-4xl font-extrabold tracking-tight text-center">
+                        Team Settings
+                    </h1>
+                </div>
+
                 <TeamEditorSuspense />
             </main>
         </Layout>

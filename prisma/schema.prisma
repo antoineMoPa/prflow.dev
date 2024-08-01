@@ -15,14 +15,15 @@ datasource db {
 }
 
 model Team {
-  id         Int          @id @default(autoincrement())
-  name       String
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime     @updatedAt
-  teamLead   User         @relation(fields: [teamLeadId], references: [id])
-  teamLeadId String
-  TeamMember TeamMember[]
-  AuthToken  AuthToken[]
+  id               Int                @id @default(autoincrement())
+  name             String
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  teamLead         User               @relation(fields: [teamLeadId], references: [id])
+  teamLeadId       String
+  TeamMember       TeamMember[]
+  AuthToken        AuthToken[]
+  GithubRepository GithubRepository[]
 
   @@index([name])
 }
@@ -37,6 +38,18 @@ model TeamMember {
   teamId Int
 
   @@index([githubUserName])
+}
+
+model GithubRepository {
+  id        Int      @id @default(autoincrement())
+  path      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  team   Team @relation(fields: [teamId], references: [id])
+  teamId Int
+
+  @@index([path])
 }
 
 model AuthToken {

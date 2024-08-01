@@ -20,11 +20,10 @@ export function Teams() {
     });
 
     return (
-        <div className="container w-1/2">
+        <div className="p-5 m-5 rounded-md border-solid border-2 border-indigo-900 container w-1/2">
             <h1 className="text-4xl font-extrabold tracking-tight text-center">
-                Edit Teams
+                Teams
             </h1>
-            <h2 className="text-xl">Teams</h2>
             <ul className="my-5">
                 {allTeams.map((team)  => {
                     return (

@@ -107,6 +107,83 @@ export const teamRouter = createTRPCRouter({
             });
         }),
 
+    getAllGithubRepositories: protectedProcedure
+        .input(z.object({ teamId: z.number() }))
+        .query(async ({ ctx, input }) => {
+            const currentUserId: string = ctx.session.user.id;
+
+            const team: Team | null = await ctx.db.team.findFirst({
+                where: {
+                    teamLead: { id: currentUserId },
+                    id: input.teamId,
+                },
+            });
+
+            if (!team) {
+                throw new Error("Team not found");
+            }
+            console.log(ctx.db)
+            return ctx.db.githubRepository.findMany({
+                where: {
+                    team: { id: input.teamId }
+                },
+            })
+    }),
+
+    addGithubRepository: protectedProcedure
+        .input(z.object({ teamId: z.number() }))
+        .input(z.object({ path: z.string().min(1) }))
+        .mutation(async ({ ctx, input }) => {
+            const currentUserId: string = ctx.session.user.id;
+
+            const team: Team | null = await ctx.db.team.findFirst({
+                where: {
+                    teamLead: { id: currentUserId },
+                    id: input.teamId,
+                },
+            });
+
+            if (!team) {
+                throw new Error("Team not found");
+            }
+
+
+            return ctx
+                .db
+                .githubRepository
+                .create({
+                data: {
+                    team: { connect: { id: input.teamId } },
+                    path: input.path,
+                },
+            });
+        }),
+
+    deleteGithubRepository: protectedProcedure
+        .input(z.object({ id: z.number() }))
+        .input(z.object({ teamId: z.number() }))
+        .mutation(async ({ ctx, input }) => {
+            const currentUserId: string = ctx.session.user.id;
+
+            const team: Team | null = await ctx.db.team.findFirst({
+                where: {
+                    teamLead: { id: currentUserId },
+                    id: input.teamId,
+                },
+            });
+
+            if (!team) {
+                throw new Error("Team not found");
+            }
+
+            return ctx.db.githubRepository.delete({
+                where: {
+                    id: input.id,
+                },
+            });
+        }),
+
+
     getAll: protectedProcedure.query(async ({ ctx }) => {
         return ctx.db.team.findMany({
             where: { teamLead: { id: ctx.session.user.id } },
