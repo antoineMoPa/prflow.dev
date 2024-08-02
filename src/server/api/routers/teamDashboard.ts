@@ -5,6 +5,7 @@ import {
     protectedProcedure
 } from "../../../server/api/trpc";
 import { type Team } from "@prisma/client";
+import { getTeamStats } from "./getTeamStats";
 
 export const teamDashboardRouter = createTRPCRouter({
 
