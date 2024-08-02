@@ -20,7 +20,19 @@ function AuthTokens() {
                     return (
                         <li key={member.id} className="flex">
                             <div className="grow self-center">
-                                {member.githubUserName}
+                                <a href={`https://github.com/${member.githubUserName}`} target="_blank">{member.githubUserName}</a>
+                            </div>
+                        </li>
+                    );
+                })}
+            </ul>
+            <h2 className="text-xl">Github Repositories</h2>
+            <ul className="my-5">
+                {stats?.githubRepositories?.map((repo)  => {
+                    return (
+                        <li key={repo.id} className="flex">
+                            <div className="grow self-center">
+                                <a href={`https://github.com/${repo.path}`} target="_blank">{repo.path}</a>
                             </div>
                         </li>
                     );

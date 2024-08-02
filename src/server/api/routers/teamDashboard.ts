@@ -31,9 +31,16 @@ export const teamDashboardRouter = createTRPCRouter({
                 },
             });
 
+            const githubRepositories = await ctx.db.githubRepository.findMany({
+                where: {
+                    teamId: input.teamId,
+                },
+            });
+
             return {
                 team,
                 teamMembers,
+                githubRepositories,
             };
         }),
 });
