@@ -6,38 +6,6 @@ import {
 } from "../../../server/api/trpc";
 import { type Team } from "@prisma/client";
 
-import { Octokit } from "@octokit/rest";
-
-
-const getTeamStats = async ({
-    githubToken,
-    teamMembers,
-    githubRepositories,
-}: {
-    githubToken: string,
-    teamMembers: string[],
-    githubRepositories: string[],
-}) => {
-    const octokit = new Octokit({
-        auth: githubToken,
-    });
-    const pulls = [];
-
-    console.log(githubRepositories);
-
-    githubRepositories.forEach(async (repoPath) => {
-        const owner = repoPath.split("/")[0] as string;
-        const repo = repoPath.split("/")[1] as string;
-        const repoStats = await octokit.rest.pulls.list({
-            owner,
-            repo,
-            sort: "updated",
-        });
-
-        console.log(repoStats);
-    });
-};
-
 export const teamDashboardRouter = createTRPCRouter({
 
     getDashboardStats: protectedProcedure
