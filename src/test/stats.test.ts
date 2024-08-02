@@ -1,4 +1,4 @@
-import { expect, test, vitest } from 'vitest'
+import { expect, test } from 'vitest'
 
 import { getTeamStats } from '../server/api/routers/getTeamStats';
 import { env } from '../env';

@@ -16,8 +16,8 @@ export const getTeamStats = async ({
 
     await Promise.all(githubRepositories.map(async (repoPath) => {
         console.log('Reading repo: ', repoPath);
-        const owner = repoPath.split("/")[0] as string;
-        const repo = repoPath.split("/")[1] as string;
+        const owner = repoPath.split("/")[0]!;
+        const repo = repoPath.split("/")[1]!;
         const repoStats = await octokit.rest.pulls.list({
             owner,
             repo,
