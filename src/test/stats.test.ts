@@ -11,7 +11,9 @@ test('gets a repo stats', async () => {
     await getTeamStats({
         githubToken: env.TEST_GITHUB_TOKEN,
         teamMembers: ['antoineMoPa'],
-        githubRepositories: ['antoineMoPa/shadergif']
+        githubRepositories: ['Lumen5/framefusion'],
+        startTime: new Date("2023-04-17T19:36:55Z"),
+        endTime: new Date("2023-11-08T17:03:51Z"),
     });
 
     expect(true).toBe(true);

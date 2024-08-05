@@ -1,31 +1,47 @@
 import { Octokit } from "@octokit/rest";
+import { DateTime } from "luxon";
 
 export const getTeamStats = async ({
     githubToken,
     teamMembers,
     githubRepositories,
+    startTime,
+    endTime,
 }: {
     githubToken: string,
     teamMembers: string[],
     githubRepositories: string[],
+    startTime: Date | undefined,
+    endTime: Date | undefined,
 }) => {
     const octokit = new Octokit({
         auth: githubToken,
     });
 
+    if (!startTime) {_
+        startTime = DateTime.now().setZone('America/New_York').minus({ weeks: 2 }).startOf('day').toJSDate();
+    }
+    if (!endTime) {
+        endTime = DateTime.now().setZone('America/New_York').endOf('day').toJSDate();
+    }
+
     await Promise.all(githubRepositories.map(async (repoPath) => {
-        console.log('Reading repo: ', repoPath);
         const owner = repoPath.split("/")[0]!;
         const repo = repoPath.split("/")[1]!;
-        const pulls = await octokit.rest.pulls.list({
+        const pullsResponse = await octokit.rest.pulls.list({
             owner,
             repo,
-            sort: "updated",
+            sort: "created",
             per_page: 100,
             page: 0,
+            state: "closed",
         });
 
-        await Promise.all(pulls.data.map(async (pull) => {
+        const pulls = pullsResponse.data
+            .filter((pull) => teamMembers.includes(pull.user.login))
+            .filter((pull) => (new Date(pull.created_at).getTime() >= startTime.getTime()));
+
+        await Promise.all(pulls.map(async (pull) => {
             // Get last time ready_for_review event time
             // to find the time where he PR stopped being a draft.
             const eventsResponse = await octokit.rest.issues.listEvents({
