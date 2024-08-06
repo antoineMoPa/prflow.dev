@@ -2,19 +2,15 @@ import { Octokit } from "@octokit/rest";
 import { DateTime } from "luxon";
 import { db } from "../../db";
 
+type PullStats = { timeToFirstReview: number | null };
+
 type RepositoryStats = {
     avgTimeToFirstReview: number,
     medianTimeToFirstReview: number | undefined,
-    pullStats: {
-        [key:string]: {
-            timeToFirstReview: number | null
-        },
-    },
+    pullStats: Record<string, PullStats>,
 };
 
-type StatsPerRepository = {
-    [key:string]: RepositoryStats,
-};
+type StatsPerRepository = Record<string, RepositoryStats>;
 
 export const getTeamStats = async ({
     githubToken,
@@ -50,11 +46,8 @@ export const getTeamStats = async ({
             },
         });
 
-        const pullStats: {
-            [key:string]: {
-                timeToFirstReview: number | null
-            },
-        } = JSON.parse(cachedStats?.cache || "{}").pullStats || {};
+        const pullStats: Record<string, PullStats> =
+            (JSON.parse(cachedStats?.cache ?? "{}") as unknown as RepositoryStats).pullStats ?? {};
 
         console.log({pullStats});
 
