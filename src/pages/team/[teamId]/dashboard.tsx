@@ -38,6 +38,7 @@ function AuthTokens() {
                     );
                 })}
             </ul>
+            <pre>{JSON.stringify(stats, null, 2)}</pre>
         </div>
     );
 }

@@ -1,5 +1,6 @@
 import { Octokit } from "@octokit/rest";
 import { DateTime } from "luxon";
+import { db } from "../../db";
 
 type RepositoryStats = {
     avgTimeToFirstReview: number,
@@ -42,12 +43,20 @@ export const getTeamStats = async ({
     const statsPerRepository: StatsPerRepository = {};
 
     await Promise.all(githubRepositories.map(async (repoPath) => {
-        // TODO: restore cache
+        // Restore from cache
+        const cachedStats = await db.repoCache.findFirst({
+            where: {
+                path: repoPath,
+            },
+        });
+
         const pullStats: {
             [key:string]: {
                 timeToFirstReview: number | null
             },
-        } = {};
+        } = JSON.parse(cachedStats?.cache || "{}").pullStats || {};
+
+        console.log({pullStats});
 
         const owner = repoPath.split("/")[0]!;
         const repo = repoPath.split("/")[1]!;
@@ -65,6 +74,11 @@ export const getTeamStats = async ({
             .filter((pull) => (new Date(pull.created_at).getTime() >= startTime.getTime()));
 
         await Promise.all(pulls.map(async (pull) => {
+            if (pull.number in pullStats) {
+                // Result was cached; skip.
+                console.log('Cache hit ✅', pull.number);
+                return;
+            }
             // Get last time ready_for_review event time
             // to find the time where he PR stopped being a draft.
             const eventsResponse = await octokit.rest.issues.listEvents({
@@ -129,7 +143,6 @@ export const getTeamStats = async ({
             pullStats[pull.number] = {
                 timeToFirstReview,
             };
-            console.log('Time to first review: ', timeToFirstReview, pull.number);
         }));
 
 
@@ -150,8 +163,21 @@ export const getTeamStats = async ({
 
         statsPerRepository[repoPath] = repositoryStats;
 
-        // TODO: update DB cache
+        const cache = JSON.stringify(repositoryStats);
+        const path = repoPath;
+        await db.repoCache.upsert({
+            where: {
+                path,
+            },
+            update: {
+                cache,
+            },
+            create: {
+                path,
+                cache,
+            }
+        });
     }));
 
-    console.log('Done');
+    return statsPerRepository;
 };
