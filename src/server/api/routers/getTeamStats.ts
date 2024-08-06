@@ -60,18 +60,29 @@ export const getTeamStats = async ({
 
         const owner = repoPath.split("/")[0]!;
         const repo = repoPath.split("/")[1]!;
-        const pullsResponse = await octokit.rest.pulls.list({
-            owner,
-            repo,
-            sort: "created",
-            per_page: 100,
-            page: 0,
-            state: "closed",
-        });
 
-        const pulls = pullsResponse.data
-            .filter((pull) => teamMembers.includes(pull.user!.login))
-            .filter((pull) => (new Date(pull.created_at).getTime() >= startTime.getTime()));
+        const pulls = [];
+
+        // Walk the pagination
+        let page = 0;
+        while (true) {
+            const pullsResponse = await octokit.rest.pulls.list({
+                owner,
+                repo,
+                sort: "created",
+                per_page: 100,
+                page,
+                state: "closed",
+            });
+
+            pulls.push(...pullsResponse.data
+                .filter((pull) => teamMembers.includes(pull.user!.login))
+                .filter((pull) => (new Date(pull.created_at).getTime() >= startTime.getTime())));
+            if (!pullsResponse.data.length) {
+                break;
+            }
+            page++;
+        }
 
         await Promise.all(pulls.map(async (pull) => {
             if (pull.number in pullStats) {
