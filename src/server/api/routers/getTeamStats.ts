@@ -1,6 +1,20 @@
 import { Octokit } from "@octokit/rest";
 import { DateTime } from "luxon";
 
+type RepositoryStats = {
+    avgTimeToFirstReview: number,
+    medianTimeToFirstReview: number | undefined,
+    pullStats: {
+        [key:string]: {
+            timeToFirstReview: number | null
+        },
+    },
+};
+
+type StatsPerRepository = {
+    [key:string]: RepositoryStats,
+};
+
 export const getTeamStats = async ({
     githubToken,
     teamMembers,
@@ -11,21 +25,30 @@ export const getTeamStats = async ({
     githubToken: string,
     teamMembers: string[],
     githubRepositories: string[],
-    startTime: Date | undefined,
-    endTime: Date | undefined,
+    startTime?: Date | undefined,
+    endTime?: Date | undefined,
 }) => {
     const octokit = new Octokit({
         auth: githubToken,
     });
 
-    if (!startTime) {_
+    if (!startTime) {
         startTime = DateTime.now().setZone('America/New_York').minus({ weeks: 2 }).startOf('day').toJSDate();
     }
     if (!endTime) {
         endTime = DateTime.now().setZone('America/New_York').endOf('day').toJSDate();
     }
 
+    const statsPerRepository: StatsPerRepository = {};
+
     await Promise.all(githubRepositories.map(async (repoPath) => {
+        // TODO: restore cache
+        const pullStats: {
+            [key:string]: {
+                timeToFirstReview: number | null
+            },
+        } = {};
+
         const owner = repoPath.split("/")[0]!;
         const repo = repoPath.split("/")[1]!;
         const pullsResponse = await octokit.rest.pulls.list({
@@ -38,7 +61,7 @@ export const getTeamStats = async ({
         });
 
         const pulls = pullsResponse.data
-            .filter((pull) => teamMembers.includes(pull.user.login))
+            .filter((pull) => teamMembers.includes(pull.user!.login))
             .filter((pull) => (new Date(pull.created_at).getTime() >= startTime.getTime()));
 
         await Promise.all(pulls.map(async (pull) => {
@@ -71,7 +94,7 @@ export const getTeamStats = async ({
 
 
             const comments = commentsResponse.data
-                .filter((comment) => comment.user.login !== pull.user.login)
+                .filter((comment) => comment.user!.login !== pull.user!.login)
                 .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
             const firstCommentDate = comments[0]?.created_at;
@@ -84,27 +107,50 @@ export const getTeamStats = async ({
             });
 
             const reviews = reviewsResponse.data
-                .sort((a, b) => new Date(a.submitted_at).getTime() - new Date(b.submitted_at).getTime());
+                .sort((a, b) => new Date(a.submitted_at!).getTime() - new Date(b.submitted_at!).getTime());
 
             const firstReviewDate = reviews[0]?.submitted_at;
 
             // Compute time to first review (smallest of first review/comment time)
-            let timeToFirstReview = 0.0;
+            let timeToFirstReview: number | null = 0.0;
             if (comments[0] && reviews[0]) {
                 timeToFirstReview = Math.min(
-                    new Date(firstCommentDate).getTime() - new Date(readyForReviewDate).getTime(),
-                    new Date(firstReviewDate).getTime() - new Date(readyForReviewDate).getTime(),
+                    new Date(firstCommentDate!).getTime() - new Date(readyForReviewDate).getTime(),
+                    new Date(firstReviewDate!).getTime() - new Date(readyForReviewDate).getTime(),
                 );
             } else if (comments[0]) {
-                timeToFirstReview = new Date(firstCommentDate).getTime() - new Date(readyForReviewDate).getTime();
+                timeToFirstReview = new Date(firstCommentDate!).getTime() - new Date(readyForReviewDate).getTime();
             } else if (reviews[0]) {
-                timeToFirstReview = new Date(firstReviewDate).getTime() - new Date(readyForReviewDate).getTime();
+                timeToFirstReview = new Date(firstReviewDate!).getTime() - new Date(readyForReviewDate).getTime();
             } else {
                 timeToFirstReview = null;
             }
 
+            pullStats[pull.number] = {
+                timeToFirstReview,
+            };
             console.log('Time to first review: ', timeToFirstReview, pull.number);
         }));
+
+
+        const timesToFirstReview = Object.values(pullStats)
+            .map(pull => pull.timeToFirstReview)
+            .filter((timeToFirstReview) => timeToFirstReview !== null);
+        const countTimesToFirstReview = timesToFirstReview.length;
+        const sumTimesToFirstReview = timesToFirstReview.reduce((a, b) => a + b, 0);
+        const avgTimeToFirstReview = sumTimesToFirstReview / countTimesToFirstReview;
+        const medianTimeToFirstReview = timesToFirstReview.sort()[Math.floor(countTimesToFirstReview / 2)];
+
+
+        const repositoryStats: RepositoryStats = {
+            avgTimeToFirstReview,
+            medianTimeToFirstReview,
+            pullStats,
+        };
+
+        statsPerRepository[repoPath] = repositoryStats;
+
+        // TODO: update DB cache
     }));
 
     console.log('Done');
