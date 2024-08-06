@@ -16,5 +16,5 @@ test('gets a repo stats', async () => {
         endTime: new Date("2023-11-08T17:03:51Z"),
     });
 
-    expect(results['Lumen5/framefusion'].avgTimeToFirstReview).toBeCloseTo(3380636, 0);
+    expect(results['Lumen5/framefusion']!.avgTimeToFirstReview).toBeCloseTo(3380636, 0);
 });
