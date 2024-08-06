@@ -8,7 +8,7 @@ test('gets a repo stats', async () => {
         throw new Error("You need a TEST_GITHUB_TOKEN to run this test.");
     }
 
-    await getTeamStats({
+    const results = await getTeamStats({
         githubToken: env.TEST_GITHUB_TOKEN,
         teamMembers: ['antoineMoPa'],
         githubRepositories: ['Lumen5/framefusion'],
@@ -16,5 +16,5 @@ test('gets a repo stats', async () => {
         endTime: new Date("2023-11-08T17:03:51Z"),
     });
 
-    expect(true).toBe(true);
+    expect(results['Lumen5/framefusion'].avgTimeToFirstReview).toBeCloseTo(3380636, 0);
 });
