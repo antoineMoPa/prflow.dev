@@ -45,8 +45,7 @@ export const getTeamStats = async ({
         const repo = repoPath.split("/")[1]!;
 
         const pulls = [];
-        const twoWeeksAgo = (new Date().getTime()) - 1000 * 60 * 60 * 24 * 14;
-
+        const prFetchCuttoff = (new Date().getTime()) - 1000 * 60 * 60 * 24 * 30;
 
         let page = 0;
         while (true) {
@@ -70,8 +69,14 @@ export const getTeamStats = async ({
 
             // Filter out PRs before 2 years
             const created_at_date = new Date(pullsResponse.data[0]!.created_at);
-            if (created_at_date.getTime() < twoWeeksAgo) {
+            if (created_at_date.getTime() < prFetchCuttoff) {
                 console.log(`PRs are older than 2 years; stopping pagination ${created_at_date}`);
+                break;
+            }
+
+            // Stop processing if we are aware of this PR
+            if (pullsResponse.data[pullsResponse.data.length - 1]!.number in pullStats) {
+                console.log(`PRs are cached; stopping pagination ${pullsResponse.data[0]!.number}`);
                 break;
             }
 
@@ -81,7 +86,6 @@ export const getTeamStats = async ({
         await Promise.all(pulls.map(async (pull) => {
             if (pull.number in pullStats) {
                 // Result was cached; skip.
-                console.log('Cache hit ✅', pull.number);
                 return;
             }
 
