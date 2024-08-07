@@ -117,10 +117,10 @@ function RepoStats({ stats }: { stats: RepositoryStats }) {
         <div>
             <h3>Repo Stats</h3>
             <PullStats stats={stats}/>
-            <h4>Avg. Time to first review</h4>
-            <p>{stats.avgTimeToFirstReview}</p>
-            <h4>Median Time to first review</h4>
-            <p>{stats.medianTimeToFirstReview}</p>
+            <h4>Avg. Time to first review (hours)</h4>
+            <p>{stats.avgTimeToFirstReview.toFixed(2)}</p>
+            <h4>Median Time to first review (hours)</h4>
+            <p>{stats.medianTimeToFirstReview.toFixed(2)}</p>
         </div>
     );
 }
@@ -132,35 +132,38 @@ function TeamDashboard() {
     const { data: stats } = api.teamDashboard.getDashboardStats.useQuery({ teamId });
 
     return (
-        <div className="p-5 m-5 rounded-md border-solid border-2 border-indigo-900">
-            <h2 className="text-xl">Members</h2>
-            <ul className="my-5">
-                {(stats?.teamMembers ?? []).map((member)  => {
-                    return (
-                        <li key={member.id} className="flex">
-                            <div className="grow self-center">
-                                <a href={`https://github.com/${member.githubUserName}`} target="_blank">{member.githubUserName}</a>
-                            </div>
-                        </li>
-                    );
-                })}
-            </ul>
-            <h2 className="text-xl">Github Repositories</h2>
-            <div className="my-5">
-                {stats?.githubRepositories?.map((repo)  => {
-                    return (
-
-                        <div key={repo.id} className="flex">
-                            <div className="grow self-center">
-                                <a href={`https://github.com/${repo.path}`} target="_blank">{repo.path}</a>
-                                { stats?.stats[repo.path] &&
-                                    <RepoStats stats={stats?.stats[repo.path]} />
-                                }
-                            </div>
-                        </div>
-                    );
-                })}
+        <div>
+            <div className="p-5 m-5 rounded-md border-solid border-2 border-indigo-900">
+                <h2 className="text-xl">Members</h2>
+                <ul className="my-5">
+                    {(stats?.teamMembers ?? []).map((member) => {
+                        return (
+                            <li key={member.id} className="flex">
+                                <div className="grow self-center">
+                                    <a href={`https://github.com/${member.githubUserName}`} target="_blank">{member.githubUserName}</a>
+                                </div>
+                            </li>
+                        );
+                    })}
+                </ul>
             </div>
+            <h2 className="text-xl pl-5">Github Repositories</h2>
+            {stats?.githubRepositories?.map((repo) => {
+                return (
+
+                    <div key={repo.id} className="flex p-5 m-5 rounded-md border-solid border-2 border-indigo-900">
+                        <div className="grow self-center">
+                            <h3 className="text-lg text-center">
+                                {repo.path}
+                            </h3>
+                            <a href={`https://github.com/${repo.path}`} target="_blank">{repo.path}</a>
+                            {stats?.stats[repo.path] &&
+                                <RepoStats stats={stats?.stats[repo.path]} />
+                            }
+                        </div>
+                    </div>
+                );
+            })}
         </div>
     );
 }

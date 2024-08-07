@@ -153,7 +153,7 @@ export const getTeamStats = async ({
 
             pullStats[pull.number] = {
                 // convert to hours
-                timeToFirstReview: timeToFirstReview ? timeToFirstReview / 1000 / 60 / 60 : null,
+                timeToFirstReview: (timeToFirstReview && timeToFirstReview > 0) ? timeToFirstReview / 1000 / 60 / 60 : null,
                 created_at,
                 link: pull.html_url,
             };
