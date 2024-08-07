@@ -1,10 +1,13 @@
 import { Octokit } from "@octokit/rest";
-import { DateTime } from "luxon";
 import { db } from "../../db";
 
-type PullStats = { timeToFirstReview: number | null };
+export type PullStats = {
+    timeToFirstReview: number | null,
+    created_at: string,
+    link: string,
+};
 
-type RepositoryStats = {
+export type RepositoryStats = {
     avgTimeToFirstReview: number,
     medianTimeToFirstReview: number | undefined,
     pullStats: Record<string, PullStats>,
@@ -16,25 +19,14 @@ export const getTeamStats = async ({
     githubToken,
     teamMembers,
     githubRepositories,
-    startTime,
-    endTime,
 }: {
     githubToken: string,
     teamMembers: string[],
     githubRepositories: string[],
-    startTime?: Date | undefined,
-    endTime?: Date | undefined,
 }) => {
     const octokit = new Octokit({
         auth: githubToken,
     });
-
-    if (!startTime) {
-        startTime = DateTime.now().setZone('America/New_York').minus({ weeks: 2 }).startOf('day').toJSDate();
-    }
-    if (!endTime) {
-        endTime = DateTime.now().setZone('America/New_York').endOf('day').toJSDate();
-    }
 
     const statsPerRepository: StatsPerRepository = {};
 
@@ -49,31 +41,40 @@ export const getTeamStats = async ({
         const pullStats: Record<string, PullStats> =
             (JSON.parse(cachedStats?.cache ?? "{}") as unknown as RepositoryStats).pullStats ?? {};
 
-        console.log({pullStats});
-
         const owner = repoPath.split("/")[0]!;
         const repo = repoPath.split("/")[1]!;
 
         const pulls = [];
+        const twoWeeksAgo = (new Date().getTime()) - 1000 * 60 * 60 * 24 * 14;
 
-        // Walk the pagination
+
         let page = 0;
         while (true) {
+            console.log(`Fetching page ${page} of PRs for repo ${repoPath}`);
             const pullsResponse = await octokit.rest.pulls.list({
                 owner,
                 repo,
                 sort: "created",
+                direction: "desc",
                 per_page: 100,
                 page,
                 state: "closed",
             });
 
             pulls.push(...pullsResponse.data
-                .filter((pull) => teamMembers.includes(pull.user!.login))
-                .filter((pull) => (new Date(pull.created_at).getTime() >= startTime.getTime())));
+                .filter((pull) => teamMembers.includes(pull.user!.login)));
+
             if (!pullsResponse.data.length) {
                 break;
             }
+
+            // Filter out PRs before 2 years
+            const created_at_date = new Date(pullsResponse.data[0]!.created_at);
+            if (created_at_date.getTime() < twoWeeksAgo) {
+                console.log(`PRs are older than 2 years; stopping pagination ${created_at_date}`);
+                break;
+            }
+
             page++;
         }
 
@@ -83,6 +84,10 @@ export const getTeamStats = async ({
                 console.log('Cache hit ✅', pull.number);
                 return;
             }
+
+
+            console.log(`Processing pull #${pull.number}`)
+
             // Get last time ready_for_review event time
             // to find the time where he PR stopped being a draft.
             const eventsResponse = await octokit.rest.issues.listEvents({
@@ -110,9 +115,9 @@ export const getTeamStats = async ({
                 issue_number: pull.number,
             });
 
-
             const comments = commentsResponse.data
                 .filter((comment) => comment.user!.login !== pull.user!.login)
+                .filter((comment) => comment.user!.login.includes("[bot]"))
                 .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
             const firstCommentDate = comments[0]?.created_at;
@@ -144,8 +149,13 @@ export const getTeamStats = async ({
                 timeToFirstReview = null;
             }
 
+            const created_at = pull.created_at;
+
             pullStats[pull.number] = {
-                timeToFirstReview,
+                // convert to hours
+                timeToFirstReview: timeToFirstReview ? timeToFirstReview / 1000 / 60 / 60 : null,
+                created_at,
+                link: pull.html_url,
             };
         }));
 
@@ -157,7 +167,6 @@ export const getTeamStats = async ({
         const sumTimesToFirstReview = timesToFirstReview.reduce((a, b) => a + b, 0);
         const avgTimeToFirstReview = sumTimesToFirstReview / countTimesToFirstReview;
         const medianTimeToFirstReview = timesToFirstReview.sort()[Math.floor(countTimesToFirstReview / 2)];
-
 
         const repositoryStats: RepositoryStats = {
             avgTimeToFirstReview,
