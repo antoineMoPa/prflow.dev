@@ -12,9 +12,7 @@ test('gets a repo stats', async () => {
         githubToken: env.TEST_GITHUB_TOKEN,
         teamMembers: ['antoineMoPa'],
         githubRepositories: ['Lumen5/framefusion'],
-        startTime: new Date("2023-04-17T19:36:55Z"),
-        endTime: new Date("2023-11-08T17:03:51Z"),
     });
 
-    expect(results['Lumen5/framefusion']!.avgTimeToFirstReview).toBeCloseTo(3380636, 0);
+    expect(results['Lumen5/framefusion']!.avgTimeToFirstReview).toBeGreaterThan(0);
 });

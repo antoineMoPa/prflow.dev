@@ -13,15 +13,18 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, T
 import type { RepositoryStats } from '~/server/api/routers/getTeamStats';
 import React from 'react';
 
-function PullTimeToFirstReviewTimeSeriesChart({ data }) {
-    let displayData: [] = data;
+function PullTimeToFirstReviewTimeSeriesChart({ data }
+    : { data: any[] }
+) {
+    let displayData: any[] = data;
 
     // Filter out times below 0 minutes
-    displayData = displayData.filter((stat) => stat.timeToFirstReview > 0);
+    displayData = displayData.filter((stat: any) => stat.timeToFirstReview > 0);
 
 
-    displayData = displayData.map((stat) => {
+    displayData = displayData.map((stat: any) => {
         return {
+            ...stat,
             x: new Date(stat.created_at).getTime(),
             y: stat.timeToFirstReview,
             data: stat,
@@ -31,7 +34,7 @@ function PullTimeToFirstReviewTimeSeriesChart({ data }) {
     );
 
     // we need to sort the data by created_at
-    displayData.sort((a, b) => {
+    displayData.sort((a: any, b: any) => {
         return a.x - b.x;
     });
 
@@ -68,7 +71,7 @@ function PullTimeToFirstReviewTimeSeriesChart({ data }) {
                 }
             }
         },
-        onClick: function(e, activeElements) {
+        onClick: function(e: any, activeElements: any) {
             const element = activeElements[0]?.element;
 
             if (!element) {
@@ -94,11 +97,11 @@ function PullTimeToFirstReviewTimeSeriesChart({ data }) {
     };
 
     return (
-        <Line data={chartData} options={options} />
+        <Line data={chartData} options={options as any} />
     );
 }
 
-function PullStats({ stats }) {
+function PullStats({ stats }: { stats: RepositoryStats }) {
     const displayStats = Object.values(stats?.pullStats ?? {});
 
     return (
@@ -116,11 +119,11 @@ function RepoStats({ stats }: { stats: RepositoryStats }) {
     return (
         <div>
             <h3>Repo Stats</h3>
-            <PullStats stats={stats}/>
+            { stats && <PullStats stats={stats}/>}
             <h4>Avg. Time to first review (hours)</h4>
             <p>{stats.avgTimeToFirstReview.toFixed(2)}</p>
             <h4>Median Time to first review (hours)</h4>
-            <p>{stats.medianTimeToFirstReview.toFixed(2)}</p>
+            <p>{stats.medianTimeToFirstReview!.toFixed(2)}</p>
         </div>
     );
 }
@@ -158,7 +161,7 @@ function TeamDashboard() {
                             </h3>
                             <a href={`https://github.com/${repo.path}`} target="_blank">{repo.path}</a>
                             {stats?.stats[repo.path] &&
-                                <RepoStats stats={stats?.stats[repo.path]} />
+                                <RepoStats stats={stats?.stats[repo.path]!} />
                             }
                         </div>
                     </div>
