@@ -3,6 +3,7 @@ import { db } from "../../db";
 
 export type PullStats = {
     timeToFirstReview: number | null,
+    author: string,
     created_at: string,
     link: string,
 };
@@ -11,9 +12,12 @@ export type RepositoryStats = {
     avgTimeToFirstReview: number,
     medianTimeToFirstReview: number | undefined,
     pullStats: Record<string, PullStats>,
+    cacheSchemaVersion: number,
 };
 
 type StatsPerRepository = Record<string, RepositoryStats>;
+
+const CACHE_SCHEMA_VERSION = 2;
 
 export const getTeamStats = async ({
     githubToken,
@@ -38,8 +42,24 @@ export const getTeamStats = async ({
             },
         });
 
-        const pullStats: Record<string, PullStats> =
-            (JSON.parse(cachedStats?.cache ?? "{}") as unknown as RepositoryStats).pullStats ?? {};
+        let pullStats: Record<string, PullStats> = {};
+
+
+        if (cachedStats?.cache) {
+            const cache = JSON.parse(cachedStats.cache) as unknown as RepositoryStats;
+            pullStats = cache.pullStats;
+
+            const CACHE_CUTOFF = 1000 * 60 * 60 * 24; // 1 day
+            const cacheDate = new Date(cachedStats.updatedAt).getTime();
+
+            if (cache.cacheSchemaVersion == CACHE_SCHEMA_VERSION &&
+                (new Date().getTime() - cacheDate) < CACHE_CUTOFF
+            ) {
+                // Don't fetch PR pages, use cache.
+                statsPerRepository[repoPath] = cache;
+                return;
+            }
+        }
 
         const owner = repoPath.split("/")[0]!;
         const repo = repoPath.split("/")[1]!;
@@ -70,7 +90,7 @@ export const getTeamStats = async ({
             // Filter out PRs before 2 years
             const created_at_date = new Date(pullsResponse.data[0]!.created_at);
             if (created_at_date.getTime() < prFetchCuttoff) {
-                console.log(`PRs are older than 2 years; stopping pagination ${created_at_date}`);
+                console.log(`PRs are older than 2 years; stopping pagination`);
                 break;
             }
 
@@ -160,6 +180,7 @@ export const getTeamStats = async ({
                 timeToFirstReview: (timeToFirstReview && timeToFirstReview > 0) ? timeToFirstReview / 1000 / 60 / 60 : null,
                 created_at,
                 link: pull.html_url,
+                author: pull.user!.login,
             };
         }));
 
@@ -176,6 +197,7 @@ export const getTeamStats = async ({
             avgTimeToFirstReview,
             medianTimeToFirstReview,
             pullStats,
+            cacheSchemaVersion: CACHE_SCHEMA_VERSION,
         };
 
         statsPerRepository[repoPath] = repositoryStats;

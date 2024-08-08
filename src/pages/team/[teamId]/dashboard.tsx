@@ -69,7 +69,7 @@ function PullTimeToFirstReviewTimeSeriesChart({ data }
                     display: true,
                     text: 'Time to first review (hours) [log scale]',
                 }
-            }
+            },
         },
         onClick: function(e: any, activeElements: any) {
             const element = activeElements[0]?.element;
@@ -92,6 +92,17 @@ function PullTimeToFirstReviewTimeSeriesChart({ data }
             title: {
                 display: true,
                 text: 'Time to first review',
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context: any) {
+                        const label = context.dataset.label || '';
+                        const yValue = context.raw.y;
+                        const author = context.raw.author || '';
+
+                        return [`${label}: ${yValue.toFixed(2)} hours`, `Author: ${author}`];
+                    }
+                }
             }
         },
     };
@@ -161,7 +172,7 @@ function TeamDashboard() {
                             </h3>
                             <a href={`https://github.com/${repo.path}`} target="_blank">{repo.path}</a>
                             {stats?.stats[repo.path] &&
-                                <RepoStats stats={stats?.stats[repo.path]!} />
+                                <RepoStats stats={stats.stats[repo.path]!} />
                             }
                         </div>
                     </div>
