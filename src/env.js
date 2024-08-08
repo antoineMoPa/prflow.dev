@@ -7,7 +7,7 @@ export const env = createEnv({
      * isn't built with invalid env vars.
      */
     server: {
-        DATABASE_URL: z.string().url(),
+        DATABASE_URL: z.string().url().default("file:./db.sqlite"),
         NODE_ENV: z
             .enum(["development", "test", "production"])
             .default("development"),
@@ -21,7 +21,7 @@ export const env = createEnv({
             (str) => process.env.VERCEL_URL ?? str,
             // VERCEL_URL doesn't include `https` so it cant be validated as a URL
             process.env.VERCEL ? z.string() : z.string().url()
-        ),
+        ).optional(),
         GITHUB_CLIENT_ID: z.string().optional(),
         GITHUB_CLIENT_SECRET: z.string().optional(),
         TEST_GITHUB_TOKEN: z.string().optional(),
