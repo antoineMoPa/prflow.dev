@@ -110,8 +110,15 @@ function PullTimeToFirstReviewTimeSeriesChart({ data }
                         const label = context.dataset.label || '';
                         const yValue = context.raw.y;
                         const author = context.raw.author || '';
+                        const number = context.raw.data.number || '';
+                        const reviewer = context.raw.data.reviewer || '';
 
-                        return [`${label}: ${yValue.toFixed(2)} hours`, `Author: ${author}`];
+                        return [
+                            `${label}: ${yValue.toFixed(2)} hours`,
+                            `#${number}`,
+                            `Author: ${author}`,
+                            `Reviewer: ${reviewer}`,
+                        ];
                     }
                 }
             }

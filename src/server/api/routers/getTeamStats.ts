@@ -4,6 +4,8 @@ import { db } from "../../db";
 export type PullStats = {
     timeToFirstReview: number | null,
     author: string,
+    number: number,
+    reviewer: string | null,
     created_at: string,
     link: string,
 };
@@ -17,7 +19,7 @@ export type RepositoryStats = {
 
 type StatsPerRepository = Record<string, RepositoryStats>;
 
-const CACHE_SCHEMA_VERSION = 2;
+const CACHE_SCHEMA_VERSION = 4;
 
 export const getTeamStats = async ({
     githubToken,
@@ -47,7 +49,10 @@ export const getTeamStats = async ({
 
         if (cachedStats?.cache) {
             const cache = JSON.parse(cachedStats.cache) as unknown as RepositoryStats;
-            pullStats = cache.pullStats;
+
+            if (cache.cacheSchemaVersion == CACHE_SCHEMA_VERSION) {
+                pullStats = cache.pullStats;
+            }
 
             const CACHE_CUTOFF = 1000 * 60 * 60 * 24; // 1 day
             const cacheDate = new Date(cachedStats.updatedAt).getTime();
@@ -181,6 +186,8 @@ export const getTeamStats = async ({
                 created_at,
                 link: pull.html_url,
                 author: pull.user!.login,
+                number: pull.number,
+                reviewer: reviews[0]?.user?.login || null,
             };
         }));
 
