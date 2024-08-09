@@ -61,6 +61,10 @@ function PullTimeToFirstReviewTimeSeriesChart({ data }
                 title: {
                     display: true,
                     text: 'Date',
+                    color: '#eeeeee',
+                },
+                ticks: {
+                    color: '#eeeeee',
                 },
             },
             y: {
@@ -68,8 +72,13 @@ function PullTimeToFirstReviewTimeSeriesChart({ data }
                 title: {
                     display: true,
                     text: 'Time to first review (hours) [log scale]',
-                }
+                    color: '#eeeeee',
+                },
+                ticks: {
+                    color: '#eeeeee',
+                },
             },
+
         },
         onClick: function(e: any, activeElements: any) {
             const element = activeElements[0]?.element;
@@ -88,10 +97,12 @@ function PullTimeToFirstReviewTimeSeriesChart({ data }
         plugins: {
             legend: {
                 display: false,
+                color: '#ffffff',
             },
             title: {
                 display: true,
                 text: 'Time to first review',
+                color: '#ffffff',
             },
             tooltip: {
                 callbacks: {
