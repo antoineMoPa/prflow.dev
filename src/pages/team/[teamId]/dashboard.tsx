@@ -12,6 +12,7 @@ import 'chartjs-adapter-date-fns';
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, TimeScale, LogarithmicScale);
 import type { RepositoryStats } from '~/server/api/routers/getTeamStats';
 import React from 'react';
+import { FaLink } from 'react-icons/fa6';
 
 function PullTimeToFirstReviewTimeSeriesChart({ data }
     : { data: any[] }
@@ -147,7 +148,6 @@ function RepoStats({ stats }: { stats: RepositoryStats }) {
 
     return (
         <div>
-            <h3>Repo Stats</h3>
             { stats && <PullStats stats={stats}/>}
             <h4>Avg. Time to first review (hours)</h4>
             <p>{stats.avgTimeToFirstReview.toFixed(2)}</p>
@@ -172,7 +172,7 @@ function TeamDashboard() {
                         return (
                             <li key={member.id} className="flex">
                                 <div className="grow self-center">
-                                    <a href={`https://github.com/${member.githubUserName}`} target="_blank">{member.githubUserName}</a>
+                                    <a href={`https://github.com/${member.githubUserName}`} target="_blank">{member.githubUserName}  <FaLink className="inline-block ml-1" /></a>
                                 </div>
                             </li>
                         );
@@ -186,9 +186,11 @@ function TeamDashboard() {
                     <div key={repo.id} className="flex p-5 m-5 rounded-md border-solid border-2 border-indigo-900">
                         <div className="grow self-center">
                             <h3 className="text-lg text-center">
-                                {repo.path}
+                                <a href={`https://github.com/${repo.path}`} target="_blank">
+                                    {repo.path}
+                                    <FaLink className="inline-block ml-1" />
+                                </a>
                             </h3>
-                            <a href={`https://github.com/${repo.path}`} target="_blank">{repo.path}</a>
                             {stats?.stats[repo.path] &&
                                 <RepoStats stats={stats.stats[repo.path]!} />
                             }
