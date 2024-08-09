@@ -31,3 +31,4 @@ jobs:
       env:
         DATABASE_URL: "file:./db.sqlite"
         TEST_GITHUB_TOKEN: ${{ secrets.TEST_GITHUB_TOKEN }}
+        NODE_ENV: "test"
