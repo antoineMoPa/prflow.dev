@@ -162,7 +162,7 @@ function PullStats({ stats }: { stats: RepositoryStats }) {
                             </td>
                             <td className="px-1 text-center">{stat.author}</td>
                             <td className="px-1 text-center">{stat.reviewer}</td>
-                            <td className="px-1">{stat.timeToFirstReview && stat.timeToFirstReview.toFixed(2)}</td>
+                            <td className="px-1">{stat?.timeToFirstReview?.toFixed(2)}</td>
                         </tr>
                     );
                 })}

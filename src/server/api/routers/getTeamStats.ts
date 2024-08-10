@@ -1,4 +1,4 @@
-import { Octokit } from "@octokit/rest";
+import { Octokit, RestEndpointMethodTypes } from "@octokit/rest";
 import { db } from "../../db";
 
 export type PullStats = {
@@ -19,7 +19,95 @@ export type RepositoryStats = {
 
 type StatsPerRepository = Record<string, RepositoryStats>;
 
-const CACHE_SCHEMA_VERSION = 8;
+const CACHE_SCHEMA_VERSION = 9;
+const DEV_MODE = true;
+
+const computeTimeToFirstReview = async({
+    owner,
+    repo,
+    pull,
+    octokit,
+}: {
+    owner: string,
+    repo: string,
+    pull: any,
+    octokit: Octokit,
+}): Promise<{
+    timeToFirstReview: number | null;
+    reviews: RestEndpointMethodTypes["pulls"]["listReviews"]["response"]["data"];
+    events: RestEndpointMethodTypes["issues"]["listEvents"]["response"]["data"];
+}> => {
+    // Get last time ready_for_review event time
+    // to find the time where he PR stopped being a draft.
+    const eventsResponse = await octokit.rest.issues.listEvents({
+        owner,
+        repo,
+        issue_number: pull.number,
+    });
+
+    const events = eventsResponse.data
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+    let readyForReviewDate = pull.created_at;
+
+    const readyForReviewEvent = events.find((event) => event.event === "ready_for_review");
+
+    if (readyForReviewEvent) {
+        readyForReviewDate = readyForReviewEvent.created_at;
+    }
+
+    // Get the first comment on a PR after it's ready
+    // (but not a comment from the author)
+    const commentsResponse = await octokit.rest.issues.listComments({
+        owner,
+        repo,
+        issue_number: pull.number,
+    });
+
+    const comments = commentsResponse.data
+        .filter((comment) => comment.user!.login !== pull.user!.login)
+        .filter((comment) => comment.user!.login.includes("[bot]"))
+        .filter((comment) => comment.user!.login.includes("[bot]"))
+        .filter((comment) => new Date(comment.created_at).getTime() > new Date(readyForReviewDate).getTime())
+        .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+
+    const firstCommentDate = comments[0]?.created_at;
+
+    // Get the first PR review time
+    const reviewsResponse = await octokit.rest.pulls.listReviews({
+        owner,
+        repo,
+        pull_number: pull.number,
+    });
+
+    const reviews = reviewsResponse.data
+        .filter((review) => review.user!.login !== pull.user!.login)
+        .sort((a, b) => new Date(a.submitted_at!).getTime() - new Date(b.submitted_at!).getTime());
+
+    const firstReviewDate = reviews[0]?.submitted_at;
+
+    // Compute time to first review (smallest of first review/comment time)
+    let timeToFirstReview: number | null = 0.0;
+    if (comments[0] && reviews[0]) {
+        timeToFirstReview = Math.min(
+            new Date(firstCommentDate!).getTime() - new Date(readyForReviewDate).getTime(),
+            new Date(firstReviewDate!).getTime() - new Date(readyForReviewDate).getTime(),
+        );
+    } else if (comments[0]) {
+        timeToFirstReview = new Date(firstCommentDate!).getTime() - new Date(readyForReviewDate).getTime();
+    } else if (reviews[0]) {
+        timeToFirstReview = new Date(firstReviewDate!).getTime() - new Date(readyForReviewDate).getTime();
+    } else {
+        timeToFirstReview = null;
+    }
+
+    return {
+        timeToFirstReview,
+        reviews,
+        events,
+    };
+}
+
 
 export const getTeamStats = async ({
     githubToken,
@@ -35,8 +123,6 @@ export const getTeamStats = async ({
     });
 
     const statsPerRepository: StatsPerRepository = {};
-
-
 
     for (const repoPath of githubRepositories) {
         // Restore from cache
@@ -76,6 +162,10 @@ export const getTeamStats = async ({
 
         let page = 0;
         while (true) {
+            if (DEV_MODE && page > 1) {
+                console.log("DEV MODE: Stopping after 1 page");
+                break;
+            }
             console.log(`Fetching page ${page} of PRs for repo ${repoPath}`);
             const pullsResponse = await octokit.rest.pulls.list({
                 owner,
@@ -111,7 +201,14 @@ export const getTeamStats = async ({
         }
 
         // Process each PR sequentially to avoid rate limiting
+        let pullCounter = 0;
         for (const pull of pulls) {
+            pullCounter++;
+            if (DEV_MODE && pullCounter > 10) {
+                console.log("DEV MODE: Stopping after 10 PRs");
+                break;
+            }
+
             if (pull.number in pullStats) {
                 // Result was cached; skip.
                 break;
@@ -119,69 +216,12 @@ export const getTeamStats = async ({
 
             console.log(`Processing pull #${pull.number}`)
 
-            // Get last time ready_for_review event time
-            // to find the time where he PR stopped being a draft.
-            const eventsResponse = await octokit.rest.issues.listEvents({
+            const { timeToFirstReview, reviews } = await computeTimeToFirstReview({
                 owner,
                 repo,
-                issue_number: pull.number,
+                pull,
+                octokit,
             });
-
-            const events = eventsResponse.data
-                .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
-            let readyForReviewDate = pull.created_at;
-
-            const readyForReviewEvent = events.find((event) => event.event === "ready_for_review");
-
-            if (readyForReviewEvent) {
-                readyForReviewDate = readyForReviewEvent.created_at;
-            }
-
-            // Get the first comment on a PR after it's ready
-            // (but not a comment from the author)
-            const commentsResponse = await octokit.rest.issues.listComments({
-                owner,
-                repo,
-                issue_number: pull.number,
-            });
-
-            const comments = commentsResponse.data
-                .filter((comment) => comment.user!.login !== pull.user!.login)
-                .filter((comment) => comment.user!.login.includes("[bot]"))
-                .filter((comment) => comment.user!.login.includes("[bot]"))
-                .filter((comment) => new Date(comment.created_at).getTime() > new Date(readyForReviewDate).getTime())
-                .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-
-            const firstCommentDate = comments[0]?.created_at;
-
-            // Get the first PR review time
-            const reviewsResponse = await octokit.rest.pulls.listReviews({
-                owner,
-                repo,
-                pull_number: pull.number,
-            });
-
-            const reviews = reviewsResponse.data
-                .filter((review) => review.user!.login !== pull.user!.login)
-                .sort((a, b) => new Date(a.submitted_at!).getTime() - new Date(b.submitted_at!).getTime());
-
-            const firstReviewDate = reviews[0]?.submitted_at;
-
-            // Compute time to first review (smallest of first review/comment time)
-            let timeToFirstReview: number | null = 0.0;
-            if (comments[0] && reviews[0]) {
-                timeToFirstReview = Math.min(
-                    new Date(firstCommentDate!).getTime() - new Date(readyForReviewDate).getTime(),
-                    new Date(firstReviewDate!).getTime() - new Date(readyForReviewDate).getTime(),
-                );
-            } else if (comments[0]) {
-                timeToFirstReview = new Date(firstCommentDate!).getTime() - new Date(readyForReviewDate).getTime();
-            } else if (reviews[0]) {
-                timeToFirstReview = new Date(firstReviewDate!).getTime() - new Date(readyForReviewDate).getTime();
-            } else {
-                timeToFirstReview = null;
-            }
 
             const created_at = pull.created_at;
 
@@ -192,7 +232,7 @@ export const getTeamStats = async ({
                 link: pull.html_url,
                 author: pull.user!.login,
                 number: pull.number,
-                reviewer: reviews[0]?.user?.login || null,
+                reviewer: reviews[0]?.user?.login ?? null,
             };
         }
 
