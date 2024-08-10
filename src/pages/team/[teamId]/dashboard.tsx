@@ -133,10 +133,41 @@ function PullTimeToFirstReviewTimeSeriesChart({ data }
 
 function PullStats({ stats }: { stats: RepositoryStats }) {
     const displayStats = Object.values(stats?.pullStats ?? {});
+    displayStats.sort((a, b) => {
+        return (a.timeToFirstReview ?? 0) - (b.timeToFirstReview ?? 0);
+    });
 
     return (
         <div>
             <PullTimeToFirstReviewTimeSeriesChart data={displayStats}/>
+            <h4>Avg. Time to first review (hours)</h4>
+            <p>{stats.avgTimeToFirstReview.toFixed(2)}</p>
+            <h4>Median Time to first review (hours)</h4>
+            <p>{stats.medianTimeToFirstReview!.toFixed(4)}</p>
+
+            <table className="text-right mt-4 w-full">
+                <tr>
+                    <th className="px-1 text-left">PR #</th>
+                    <th className="px-1 text-center">Author</th>
+                    <th className="px-1 text-center">Reviewer</th>
+                    <th className="px-1">Time to first review (hours)</th>
+                </tr>
+                {displayStats.filter(stat => stat.reviewer).map((stat) => {
+                    return (
+                        <tr key={stat.number} className="text-slate-300">
+                            <td className="px-1 text-left">
+                                <a href={stat.link} target="_blank">
+                                    {stat.number}
+                                </a>
+                            </td>
+                            <td className="px-1 text-center">{stat.author}</td>
+                            <td className="px-1 text-center">{stat.reviewer}</td>
+                            <td className="px-1">{stat.timeToFirstReview && stat.timeToFirstReview.toFixed(2)}</td>
+                        </tr>
+                    );
+                })}
+            </table>
+
         </div>
     );
 }
@@ -149,10 +180,6 @@ function RepoStats({ stats }: { stats: RepositoryStats }) {
     return (
         <div>
             { stats && <PullStats stats={stats}/>}
-            <h4>Avg. Time to first review (hours)</h4>
-            <p>{stats.avgTimeToFirstReview.toFixed(2)}</p>
-            <h4>Median Time to first review (hours)</h4>
-            <p>{stats.medianTimeToFirstReview!.toFixed(2)}</p>
         </div>
     );
 }

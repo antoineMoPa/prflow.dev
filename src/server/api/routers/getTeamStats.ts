@@ -19,7 +19,7 @@ export type RepositoryStats = {
 
 type StatsPerRepository = Record<string, RepositoryStats>;
 
-const CACHE_SCHEMA_VERSION = 4;
+const CACHE_SCHEMA_VERSION = 8;
 
 export const getTeamStats = async ({
     githubToken,
@@ -36,7 +36,9 @@ export const getTeamStats = async ({
 
     const statsPerRepository: StatsPerRepository = {};
 
-    await Promise.all(githubRepositories.map(async (repoPath) => {
+
+
+    for (const repoPath of githubRepositories) {
         // Restore from cache
         const cachedStats = await db.repoCache.findFirst({
             where: {
@@ -62,7 +64,7 @@ export const getTeamStats = async ({
             ) {
                 // Don't fetch PR pages, use cache.
                 statsPerRepository[repoPath] = cache;
-                return;
+                break;
             }
         }
 
@@ -108,12 +110,12 @@ export const getTeamStats = async ({
             page++;
         }
 
-        await Promise.all(pulls.map(async (pull) => {
+        // Process each PR sequentially to avoid rate limiting
+        for (const pull of pulls) {
             if (pull.number in pullStats) {
                 // Result was cached; skip.
-                return;
+                break;
             }
-
 
             console.log(`Processing pull #${pull.number}`)
 
@@ -147,6 +149,8 @@ export const getTeamStats = async ({
             const comments = commentsResponse.data
                 .filter((comment) => comment.user!.login !== pull.user!.login)
                 .filter((comment) => comment.user!.login.includes("[bot]"))
+                .filter((comment) => comment.user!.login.includes("[bot]"))
+                .filter((comment) => new Date(comment.created_at).getTime() > new Date(readyForReviewDate).getTime())
                 .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
             const firstCommentDate = comments[0]?.created_at;
@@ -159,6 +163,7 @@ export const getTeamStats = async ({
             });
 
             const reviews = reviewsResponse.data
+                .filter((review) => review.user!.login !== pull.user!.login)
                 .sort((a, b) => new Date(a.submitted_at!).getTime() - new Date(b.submitted_at!).getTime());
 
             const firstReviewDate = reviews[0]?.submitted_at;
@@ -189,16 +194,17 @@ export const getTeamStats = async ({
                 number: pull.number,
                 reviewer: reviews[0]?.user?.login || null,
             };
-        }));
-
+        }
 
         const timesToFirstReview = Object.values(pullStats)
+            .filter(pull => pull.reviewer !== null)
             .map(pull => pull.timeToFirstReview)
             .filter((timeToFirstReview) => timeToFirstReview !== null);
+        timesToFirstReview.sort();
         const countTimesToFirstReview = timesToFirstReview.length;
         const sumTimesToFirstReview = timesToFirstReview.reduce((a, b) => a + b, 0);
         const avgTimeToFirstReview = sumTimesToFirstReview / countTimesToFirstReview;
-        const medianTimeToFirstReview = timesToFirstReview.sort()[Math.floor(countTimesToFirstReview / 2)];
+        const medianTimeToFirstReview = timesToFirstReview[Math.floor(countTimesToFirstReview / 2)];
 
         const repositoryStats: RepositoryStats = {
             avgTimeToFirstReview,
@@ -223,7 +229,7 @@ export const getTeamStats = async ({
                 cache,
             }
         });
-    }));
+    }
 
     return statsPerRepository;
 };

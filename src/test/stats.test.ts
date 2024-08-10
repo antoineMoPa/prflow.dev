@@ -15,4 +15,4 @@ test('gets a repo stats', async () => {
     });
 
     expect(results['Lumen5/framefusion']!.avgTimeToFirstReview).toBeGreaterThan(0);
-});
+}, 50000);
