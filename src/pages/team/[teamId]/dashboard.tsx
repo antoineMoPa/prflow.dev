@@ -140,17 +140,20 @@ function PullStats({ stats }: { stats: RepositoryStats }) {
     return (
         <div>
             <PullTimeToFirstReviewTimeSeriesChart data={displayStats}/>
-            <h4>Avg. Time to first review (hours)</h4>
+            <h4>Avg. Time to First Review (hours)</h4>
             <p>{stats.avgTimeToFirstReview.toFixed(2)}</p>
-            <h4>Median Time to first review (hours)</h4>
+            <h4>Median Time to First Review (hours)</h4>
             <p>{stats.medianTimeToFirstReview!.toFixed(4)}</p>
+            <h4>Avg. Pull Request Cycle Time (hours)</h4>
+            <p>{stats.avgPullRequestCycleTime?.toFixed(4)}</p>
 
             <table className="text-right mt-4 w-full">
                 <tr>
                     <th className="px-1 text-left">PR #</th>
                     <th className="px-1 text-center">Author</th>
                     <th className="px-1 text-center">Reviewer</th>
-                    <th className="px-1">Time to first review (hours)</th>
+                    <th className="px-1 text-center">Time to First Review (hours)</th>
+                    <th className="px-1 text-right">Cycle Time (hours)</th>
                 </tr>
                 {displayStats.filter(stat => stat.reviewer).map((stat) => {
                     return (
@@ -162,7 +165,8 @@ function PullStats({ stats }: { stats: RepositoryStats }) {
                             </td>
                             <td className="px-1 text-center">{stat.author}</td>
                             <td className="px-1 text-center">{stat.reviewer}</td>
-                            <td className="px-1">{stat?.timeToFirstReview?.toFixed(2)}</td>
+                            <td className="px-1 text-center">{stat?.timeToFirstReview?.toFixed(2)}</td>
+                            <td className="px-1 text-right">{stat?.cycleTime?.toFixed(2)}</td>
                         </tr>
                     );
                 })}

@@ -8,9 +8,11 @@ export type PullStats = {
     reviewer: string | null,
     created_at: string,
     link: string,
+    cycleTime: number | null,
 };
 
 export type RepositoryStats = {
+    avgPullRequestCycleTime: number,
     avgTimeToFirstReview: number,
     medianTimeToFirstReview: number | undefined,
     pullStats: Record<string, PullStats>,
@@ -19,8 +21,8 @@ export type RepositoryStats = {
 
 type StatsPerRepository = Record<string, RepositoryStats>;
 
-const CACHE_SCHEMA_VERSION = 9;
-const DEV_MODE = true;
+const CACHE_SCHEMA_VERSION = 11;
+const DEV_MODE = false;
 
 const computeTimeToFirstReview = async({
     owner,
@@ -30,12 +32,13 @@ const computeTimeToFirstReview = async({
 }: {
     owner: string,
     repo: string,
-    pull: any,
+    pull: RestEndpointMethodTypes["pulls"]["list"]["response"]["data"][0],
     octokit: Octokit,
 }): Promise<{
     timeToFirstReview: number | null;
     reviews: RestEndpointMethodTypes["pulls"]["listReviews"]["response"]["data"];
     events: RestEndpointMethodTypes["issues"]["listEvents"]["response"]["data"];
+    readyForReviewDate: string;
 }> => {
     // Get last time ready_for_review event time
     // to find the time where he PR stopped being a draft.
@@ -103,11 +106,58 @@ const computeTimeToFirstReview = async({
 
     return {
         timeToFirstReview,
+        readyForReviewDate,
         reviews,
         events,
     };
 }
 
+const computePullCycleTime = async({
+    pull,
+    owner,
+    repo,
+    octokit,
+    events,
+} : {
+    pull: RestEndpointMethodTypes["pulls"]["list"]["response"]["data"][0];
+    owner: string;
+    repo: string;
+    octokit: Octokit;
+    events: RestEndpointMethodTypes["issues"]["listEvents"]["response"]["data"];
+}): Promise<{
+    cycleTime: number | null
+}> => {
+    const mergeEvent = events.find(e => e.event === 'merged');
+    const commitsResponse = await octokit.rest.pulls.listCommits({
+        owner,
+        repo,
+        pull_number: pull.number,
+        per_page: 1,
+        sort: "created",
+        direction: "asc",
+    });
+    const commits = commitsResponse.data;
+
+    const firstCommitDate = commits[0]?.commit.author?.date;
+    const mergeDate = mergeEvent?.created_at;
+
+    if (!firstCommitDate || !mergeDate) {
+        return {
+            cycleTime: null,
+        };
+    }
+
+    const firstCommitTime = new Date(firstCommitDate).getTime();
+    const mergeTime = new Date(mergeDate).getTime();
+
+    const cycleTime = (mergeDate && firstCommitDate) ?
+        (mergeTime - firstCommitTime) / 1000 / 60 / 60:
+        null;
+
+    return {
+        cycleTime
+    }
+};
 
 export const getTeamStats = async ({
     githubToken,
@@ -216,11 +266,19 @@ export const getTeamStats = async ({
 
             console.log(`Processing pull #${pull.number}`)
 
-            const { timeToFirstReview, reviews } = await computeTimeToFirstReview({
+            const { timeToFirstReview, reviews, events } = await computeTimeToFirstReview({
                 owner,
                 repo,
                 pull,
                 octokit,
+            });
+
+            const { cycleTime } = await computePullCycleTime({
+                pull,
+                owner,
+                repo,
+                octokit,
+                events,
             });
 
             const created_at = pull.created_at;
@@ -233,9 +291,11 @@ export const getTeamStats = async ({
                 author: pull.user!.login,
                 number: pull.number,
                 reviewer: reviews[0]?.user?.login ?? null,
+                cycleTime,
             };
         }
 
+        // Review Time
         const timesToFirstReview = Object.values(pullStats)
             .filter(pull => pull.reviewer !== null)
             .map(pull => pull.timeToFirstReview)
@@ -246,7 +306,15 @@ export const getTeamStats = async ({
         const avgTimeToFirstReview = sumTimesToFirstReview / countTimesToFirstReview;
         const medianTimeToFirstReview = timesToFirstReview[Math.floor(countTimesToFirstReview / 2)];
 
+        // Pull Cycle Time
+        const cycleTimes = Object.values(pullStats)
+            .map(pull => pull.cycleTime)
+            .filter(val => val != null);
+        const sumCycleTime = cycleTimes.reduce((a, b) => a + b, 0);
+        const avgPullRequestCycleTime = sumCycleTime / cycleTimes.length;
+
         const repositoryStats: RepositoryStats = {
+            avgPullRequestCycleTime,
             avgTimeToFirstReview,
             medianTimeToFirstReview,
             pullStats,
