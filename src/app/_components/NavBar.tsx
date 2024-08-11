@@ -18,6 +18,11 @@ function SessionNavBarContent() {
         <>
             { !session?.data?.user &&
                 <NavbarContent justify="end">
+                    <NavbarItem className="mr-3">
+                        <Link href="/pricing">
+                            Pricing
+                        </Link>
+                    </NavbarItem>
                     <NavbarItem>
                         <Button as={Link} color="success" href="/api/auth/signin" variant="flat">
                             Sign In
@@ -37,6 +42,11 @@ function SessionNavBarContent() {
                             Teams
                         </Link>
                     </NavbarItem>
+                    <NavbarItem className="mr-3">
+                        <Link href="/pricing">
+                            Pricing
+                        </Link>
+                    </NavbarItem>
                     <NavbarItem>
                         <Button as={Link} color="primary" href="/api/auth/signout" variant="flat">
                             Sign Out
@@ -54,7 +64,7 @@ export default function NavBar() {
             <SessionProvider>
                 <NavbarBrand>
                     <Link href="/">
-                        <img src="/prflow-with-text.dev.png" alt="prflow.dev" className="h-8" />
+                        <img src="/logo-with-text.png" alt="prflow.dev" className="h-10" />
                     </Link>
                 </NavbarBrand>
                 <SessionNavBarContent />
