@@ -16,16 +16,6 @@ function SessionNavBarContent() {
 
     return (
         <>
-            <NavbarContent className="hidden sm:flex gap-4" justify="center">
-                {
-                    session?.data?.user &&
-                        <NavbarItem>
-                            <Link href="/teams">
-                                Teams
-                            </Link>
-                        </NavbarItem>
-                }
-            </NavbarContent>
             { !session?.data?.user &&
                 <NavbarContent justify="end">
                     <NavbarItem>
@@ -42,6 +32,11 @@ function SessionNavBarContent() {
             }
             { session?.data?.user &&
                 <NavbarContent justify="end">
+                    <NavbarItem className="mr-3">
+                        <Link href="/teams">
+                            Teams
+                        </Link>
+                    </NavbarItem>
                     <NavbarItem>
                         <Button as={Link} color="primary" href="/api/auth/signout" variant="flat">
                             Sign Out
@@ -59,7 +54,7 @@ export default function NavBar() {
             <SessionProvider>
                 <NavbarBrand>
                     <Link href="/">
-                        Engmetrix
+                        <img src="/prflow-with-text.dev.png" alt="prflow.dev" className="h-8" />
                     </Link>
                 </NavbarBrand>
                 <SessionNavBarContent />

@@ -21,7 +21,7 @@ export type RepositoryStats = {
 
 type StatsPerRepository = Record<string, RepositoryStats>;
 
-const CACHE_SCHEMA_VERSION = 11;
+const CACHE_SCHEMA_VERSION = 12;
 const DEV_MODE = false;
 
 const computeTimeToFirstReview = async({
