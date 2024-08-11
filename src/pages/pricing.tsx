@@ -1,11 +1,6 @@
 "use client";
 
 import Layout from '~/app/_components/Layout';
-import { useSession } from 'next-auth/react';
-import { useState } from "react";
-import { api } from "../trpc/react";
-import { Button, Input } from "@nextui-org/react";
-import { FaGear, FaChartLine } from 'react-icons/fa6';
 
 export default function Team() {
 
