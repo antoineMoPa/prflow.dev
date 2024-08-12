@@ -10,8 +10,8 @@ export default function Team() {
                 <h1 className="text-5xl font-extrabold tracking-tight sm:text-[5rem] text-center">
                     Pricing
                 </h1>
-                <p className="text-center text-xl mt-10">prflow.dev if free while in beta!</p>
-                <p className="text-center text-xl mt-10">After beta, we plan to offer these tiers:</p>
+                <p className="text-center text-xl mt-10">prflow.dev is free until we implement payment!</p>
+                <p className="text-center text-xl mt-10">The plan is to offer these tiers:</p>
                 <div className="flex w-full justify-center mt-10">
                     <div className="flex">
                         <div className="flex flex-col bg-[#1f1f1f] p-10 rounded-lg m-5">
