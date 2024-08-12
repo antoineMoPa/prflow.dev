@@ -1,0 +1,4 @@
+.git/**
+.github/**
+./prisma/db.sqlite
+deploy.sh
