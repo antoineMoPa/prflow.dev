@@ -117,6 +117,7 @@ function AuthTokens() {
                     target="_blank">
                     github.com/settings/tokens
                 </Link>
+                <p>Make sure to use a classic token and give repo permissions.</p>
             </p>
             <ul className="my-5">
                 {allAuthTokens?.map((authToken)  => {

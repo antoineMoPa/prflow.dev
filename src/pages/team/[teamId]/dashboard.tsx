@@ -197,7 +197,7 @@ function TeamDashboard() {
     return (
         <div>
             <div className="p-5 m-5 rounded-md border-solid border-2 border-indigo-900">
-                <h2 className="text-xl">Members</h2>
+                <h2 className="text-xl">Your team</h2>
                 <ul className="my-5">
                     {(stats?.teamMembers ?? []).map((member) => {
                         return (
