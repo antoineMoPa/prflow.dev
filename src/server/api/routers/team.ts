@@ -9,6 +9,45 @@ import { type Team } from "@prisma/client";
 
 export const teamRouter = createTRPCRouter({
 
+    sendSlackReport: protectedProcedure
+        .input(z.object({ teamId: z.number() }))
+        .mutation(async ({ ctx, input }) => {
+            const currentUserId: string = ctx.session.user.id;
+
+            const team: Team | null = await ctx.db.team.findFirst({
+                where: {
+                    teamLead: { id: currentUserId },
+                    id: input.teamId,
+                },
+            });
+
+            if (!team) {
+                throw new Error("Team not found");
+            }
+
+            const slackToken = await ctx.db.authToken.findFirst({
+                where: {
+                    teamId: input.teamId,
+                    type: "slack_webhook_url",
+                },
+            });
+
+            if (!slackToken) {
+                throw new Error("Slack webhook URL not found. Add one in the team's settings.");
+            }
+
+            const slackWebhookUrl = slackToken.value;
+            await fetch(slackWebhookUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    text: "Hello, World!",
+                }),
+            });
+        }),
+
     create: protectedProcedure
         .input(z.object({ name: z.string().min(1) }))
         .mutation(async ({ ctx, input }) => {
@@ -237,7 +276,7 @@ export const teamRouter = createTRPCRouter({
             name: z.string().min(1),
             value: z.string().min(1),
             teamId: z.number(),
-            type: z.string().regex(/github/),
+            type: z.string(),
         }))
         .mutation(async ({ ctx, input }) => {
             const currentUserId: string = ctx.session.user.id;

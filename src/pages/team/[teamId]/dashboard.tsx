@@ -13,6 +13,7 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, T
 import type { RepositoryStats } from '~/server/api/routers/getTeamStats';
 import React from 'react';
 import { FaLink } from 'react-icons/fa6';
+import { Button } from '@nextui-org/react';
 
 function PullTimeToFirstReviewTimeSeriesChart({ data }
     : { data: any[] }
@@ -188,6 +189,39 @@ function RepoStats({ stats }: { stats: RepositoryStats }) {
     );
 }
 
+function SlackReportTest({ teamId }: { teamId: number }) {
+    const {
+        isError,
+        isSuccess,
+        mutate,
+        failureReason,
+    } = api.team.sendSlackReport.useMutation();
+
+
+    return (
+        <div>
+            <h2 className="my-2">Test Slack Notifications</h2>
+            <p className="my-2">
+                Use this section to test the slack webhook notifications for your team.
+            </p>
+            <Button
+                className="mt-2"
+                onClick={() => {
+                    mutate({ teamId });
+                }}
+            >
+                Send Slack Report
+            </Button>
+            <div className="mt-2 text-red-500">
+                {isError && <div>Failed to send slack report: {failureReason?.message}</div>}
+            </div>
+            <div className="mt-2 text-green-500">
+                {isSuccess && <div>Slack report sent successfully!</div>}
+            </div>
+        </div>
+    );
+}
+
 function TeamDashboard() {
     const router = useRouter();
     const teamId = parseInt(router.query.teamId as string);
@@ -229,6 +263,10 @@ function TeamDashboard() {
                     </div>
                 );
             })}
+            <div className="p-5 m-5 rounded-md border-solid border-2 border-indigo-900">
+                <h2 className="text-xl">Slack Report Test</h2>
+                <SlackReportTest teamId={teamId} />
+            </div>
         </div>
     );
 }

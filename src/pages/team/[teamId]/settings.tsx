@@ -106,9 +106,21 @@ function AuthTokens() {
         },
     });
 
+    React.useEffect(() => {
+        if (tokenType === "slack_webhook_url") {
+            setName("slack webhook url");
+        }
+        if (tokenType === "github") {
+            setName("github token");
+        }
+    }, [tokenType]);
+
     return (
         <div className="p-5 m-5 rounded-md border-solid border-2 border-indigo-900">
             <h2 className="text-xl">Authentication tokens</h2>
+            <p className="text-md">
+                GitHub Instructions
+            </p>
             <p>
                 Generate a github authentication token here:&nbsp;
                 <Link
@@ -124,7 +136,8 @@ function AuthTokens() {
                     return (
                         <li key={authToken.id} className="flex">
                             <div className="grow self-center">
-                                {authToken.name} - {authToken.type} token
+                                {authToken.name}
+                                <span className="text-slate-500 ml-1">[{authToken.type}]</span>
                             </div>
                             <Button
                                 className="ml-2 mt-2"
@@ -153,7 +166,7 @@ function AuthTokens() {
                     />
                     <Input
                         type="text"
-                        label="Token"
+                        label="Value"
                         className="ml-5"
                         onChange={(e) => setValue(e.target.value)}
                         value={value}
@@ -165,6 +178,7 @@ function AuthTokens() {
                         onChange={(e) => setTokenType(e.target.value)}
                     >
                        <SelectItem key="github">GitHub</SelectItem>
+                       <SelectItem key="slack_webhook_url">Slack Webhook URL</SelectItem>
                     </Select>
                     <Button
                         type="submit"
