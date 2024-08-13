@@ -89,7 +89,7 @@ export const teamRouter = createTRPCRouter({
                 .create({
                 data: {
                     team: { connect: { id: input.teamId } },
-                    githubUserName: input.githubUserName,
+                    githubUserName: input.githubUserName.replace(/^@/, ""),
                 },
             });
         }),
