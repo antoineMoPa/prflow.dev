@@ -1,10 +1,10 @@
 #!/bin/bash
 
+docker stop $(docker ps | grep 3333 | cut -d" " -f1)
+
 set -e
 
 git pull origin main
-
-docker stop $(docker ps | grep 3333 | cut -d" " -f1)
 
 docker build -t prflow.dev .
 
