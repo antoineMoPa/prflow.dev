@@ -82,7 +82,7 @@ function PullTimeToFirstReviewTimeSeriesChart({ data }
             },
 
         },
-        onClick: function(e: any, activeElements: any) {
+        onClick: function(_e: any, activeElements: any) {
             const element = activeElements[0]?.element;
 
             if (!element) {
@@ -235,9 +235,9 @@ function TeamDashboard() {
                 <ul className="my-5">
                     {(stats?.teamMembers ?? []).map((member) => {
                         return (
-                            <li key={member.id} className="flex">
+                            <li key={member} className="flex">
                                 <div className="grow self-center">
-                                    <a href={`https://github.com/${member.githubUserName}`} target="_blank">{member.githubUserName}  <FaLink className="inline-block ml-1" /></a>
+                                    <a href={`https://github.com/${member}`} target="_blank">{member}  <FaLink className="inline-block ml-1" /></a>
                                 </div>
                             </li>
                         );
@@ -248,16 +248,16 @@ function TeamDashboard() {
             {stats?.githubRepositories?.map((repo) => {
                 return (
 
-                    <div key={repo.id} className="flex p-5 m-5 rounded-md border-solid border-2 border-indigo-900">
+                    <div key={repo} className="flex p-5 m-5 rounded-md border-solid border-2 border-indigo-900">
                         <div className="grow self-center">
                             <h3 className="text-lg text-center">
-                                <a href={`https://github.com/${repo.path}`} target="_blank">
-                                    {repo.path}
+                                <a href={`https://github.com/${repo}`} target="_blank">
+                                    {repo}
                                     <FaLink className="inline-block ml-1" />
                                 </a>
                             </h3>
-                            {stats?.stats[repo.path] &&
-                                <RepoStats stats={stats.stats[repo.path]!} />
+                            {stats?.stats[repo] &&
+                                <RepoStats stats={stats.stats[repo]!} />
                             }
                         </div>
                     </div>

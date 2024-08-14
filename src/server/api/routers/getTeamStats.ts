@@ -1,5 +1,6 @@
 import { Octokit, RestEndpointMethodTypes } from "@octokit/rest";
 import { db } from "../../db";
+import { GithubRepository, Team, TeamMember } from "@prisma/client";
 
 export type PullStats = {
     timeToFirstReview: number | null,
@@ -26,12 +27,12 @@ const DEV_MODE = false;
 
 const computeTimeToFirstReview = async({
     owner,
-    repo,
+    repoName,
     pull,
     octokit,
 }: {
     owner: string,
-    repo: string,
+    repoName: string,
     pull: RestEndpointMethodTypes["pulls"]["list"]["response"]["data"][0],
     octokit: Octokit,
 }): Promise<{
@@ -44,7 +45,7 @@ const computeTimeToFirstReview = async({
     // to find the time where he PR stopped being a draft.
     const eventsResponse = await octokit.rest.issues.listEvents({
         owner,
-        repo,
+        repo: repoName,
         issue_number: pull.number,
     });
 
@@ -63,7 +64,7 @@ const computeTimeToFirstReview = async({
     // (but not a comment from the author)
     const commentsResponse = await octokit.rest.issues.listComments({
         owner,
-        repo,
+        repo: repoName,
         issue_number: pull.number,
     });
 
@@ -79,7 +80,7 @@ const computeTimeToFirstReview = async({
     // Get the first PR review time
     const reviewsResponse = await octokit.rest.pulls.listReviews({
         owner,
-        repo,
+        repo: repoName,
         pull_number: pull.number,
     });
 
@@ -115,13 +116,13 @@ const computeTimeToFirstReview = async({
 const computePullCycleTime = async({
     pull,
     owner,
-    repo,
+    repoName,
     octokit,
     events,
 } : {
     pull: RestEndpointMethodTypes["pulls"]["list"]["response"]["data"][0];
     owner: string;
-    repo: string;
+    repoName: string;
     octokit: Octokit;
     events: RestEndpointMethodTypes["issues"]["listEvents"]["response"]["data"];
 }): Promise<{
@@ -130,7 +131,7 @@ const computePullCycleTime = async({
     const mergeEvent = events.find(e => e.event === 'merged');
     const commitsResponse = await octokit.rest.pulls.listCommits({
         owner,
-        repo,
+        repo: repoName,
         pull_number: pull.number,
         per_page: 1,
         sort: "created",
@@ -160,6 +161,46 @@ const computePullCycleTime = async({
 };
 
 export const getTeamStats = async ({
+    team,
+}: {
+    team: Team,
+}) => {
+    const teamMembers = (await db.teamMember.findMany({
+        where: {
+            teamId: team.id,
+        },
+    })).map((teamMember: TeamMember) => teamMember.githubUserName);
+
+    console.log(`Team members: teamMembers`, teamMembers, team.id);
+
+    const githubRepositories: string[] = (await db.githubRepository.findMany({
+        where: {
+            teamId: team.id,
+        },
+    })).map((repo: GithubRepository) => repo.path);
+
+    const githubToken = (await db.authToken.findFirst({
+        where: {
+            teamId: team.id,
+            type: "github",
+        },
+    }))?.value;
+
+    if (!githubToken) {
+        throw new Error("GitHub token not found");
+    }
+
+    return getTeamStatsHeadless({
+        githubToken,
+        teamMembers,
+        githubRepositories,
+    });
+};
+
+/**
+ * The easily testable part of getTeamStats
+ */
+export const getTeamStatsHeadless = async ({
     githubToken,
     teamMembers,
     githubRepositories,
@@ -175,7 +216,6 @@ export const getTeamStats = async ({
     const statsPerRepository: StatsPerRepository = {};
 
     for (const repoPath of githubRepositories) {
-        // Restore from cache
         const cachedStats = await db.repoCache.findFirst({
             where: {
                 path: repoPath,
@@ -205,7 +245,7 @@ export const getTeamStats = async ({
         }
 
         const owner = repoPath.split("/")[0]!;
-        const repo = repoPath.split("/")[1]!;
+        const repoName = repoPath.split("/")[1]!;
 
         const pulls = [];
         const prFetchCuttoff = (new Date().getTime()) - 1000 * 60 * 60 * 24 * 30;
@@ -219,7 +259,7 @@ export const getTeamStats = async ({
             console.log(`Fetching page ${page} of PRs for repo ${repoPath}`);
             const pullsResponse = await octokit.rest.pulls.list({
                 owner,
-                repo,
+                repo: repoName,
                 sort: "created",
                 direction: "desc",
                 per_page: 100,
@@ -268,7 +308,7 @@ export const getTeamStats = async ({
 
             const { timeToFirstReview, reviews, events } = await computeTimeToFirstReview({
                 owner,
-                repo,
+                repoName,
                 pull,
                 octokit,
             });
@@ -276,7 +316,7 @@ export const getTeamStats = async ({
             const { cycleTime } = await computePullCycleTime({
                 pull,
                 owner,
-                repo,
+                repoName,
                 octokit,
                 events,
             });
@@ -339,5 +379,9 @@ export const getTeamStats = async ({
         });
     }
 
-    return statsPerRepository;
+    return {
+        stats: statsPerRepository,
+        teamMembers,
+        githubRepositories,
+    };
 };

@@ -36,16 +36,17 @@ export const teamRouter = createTRPCRouter({
                 throw new Error("Slack webhook URL not found. Add one in the team's settings.");
             }
 
-            const slackWebhookUrl = slackToken.value;
-            await fetch(slackWebhookUrl, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    text: "Hello, World!",
-                }),
-            });
+
+            // const slackWebhookUrl = slackToken.value;
+            // await fetch(slackWebhookUrl, {
+            //     method: "POST",
+            //     headers: {
+            //         "Content-Type": "application/json",
+            //     },
+            //     body: JSON.stringify({
+            //         text: "Hello, World!",
+            //     }),
+            // });
         }),
 
     create: protectedProcedure
@@ -172,7 +173,7 @@ export const teamRouter = createTRPCRouter({
             if (!team) {
                 throw new Error("Team not found");
             }
-            console.log(ctx.db)
+
             return ctx.db.githubRepository.findMany({
                 where: {
                     team: { id: input.teamId }
