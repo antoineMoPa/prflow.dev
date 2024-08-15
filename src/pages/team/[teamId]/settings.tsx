@@ -193,6 +193,40 @@ function AuthTokens() {
     );
 }
 
+function SlackReportTest() {
+    const router = useRouter();
+    const teamId = parseInt(router.query.teamId as string);
+    const {
+        isError,
+        isSuccess,
+        mutate,
+        failureReason,
+    } = api.team.sendSlackReport.useMutation();
+
+
+    return (
+        <div>
+            <h2 className="my-2">Test Slack Notifications</h2>
+            <p className="my-2">
+                Use this section to test the slack webhook notifications for your team.
+            </p>
+            <Button
+                className="mt-2"
+                onClick={() => {
+                    mutate({ teamId });
+                }}
+            >
+                Send Slack Report
+            </Button>
+            <div className="mt-2 text-red-500">
+                {isError && <div>Failed to send slack report: {failureReason?.message}</div>}
+            </div>
+            <div className="mt-2 text-green-500">
+                {isSuccess && <div>Slack report sent successfully!</div>}
+            </div>
+        </div>
+    );
+}
 
 function TeamEditor() {
     const router = useRouter();
@@ -307,6 +341,11 @@ function TeamEditorSuspense() {
             <GithubRepositoriesEditor/>
             <div className="my-10"></div>
             <AuthTokens/>
+            <div className="my-10"></div>
+            <div className="p-5 m-5 rounded-md border-solid border-2 border-indigo-900">
+                <h2 className="text-xl">Slack Report Test</h2>
+                <SlackReportTest/>
+            </div>
             <div className="my-10"></div>
             <DangerZone/>
         </div>

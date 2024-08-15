@@ -7,8 +7,8 @@ import { TRPCReactProvider } from "../trpc/react";
 import { NextUIProvider } from "@nextui-org/react";
 
 export const metadata: Metadata = {
-    title: "Engmetrix",
-    description: "Git metrics for your team",
+    title: "prflow.dev",
+    description: "Measure and improve team workflows",
     icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 
