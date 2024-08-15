@@ -263,7 +263,7 @@ function TeamDashboardSuspense() {
     const session = useSession();
 
     if (!session?.data?.user) {
-        return <div>loading...</div>;
+        return <div>Please sign in to view this page.</div>;
     }
 
     return (
