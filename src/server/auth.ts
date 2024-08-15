@@ -45,16 +45,28 @@ export const authOptions: NextAuthOptions = {
                     ...session.user,
                     id: user.id,
                     token: token?.accessToken,
+                    //githubUserName: session.,
                 },
             }
         },
     },
     adapter: PrismaAdapter(db) as Adapter,
     providers: [
-        Github({
-            clientId: env.GITHUB_CLIENT_ID ?? "",
-            clientSecret: env.GITHUB_CLIENT_SECRET ?? "",
-        }),
+        {
+            ...Github({
+                clientId: env.GITHUB_CLIENT_ID ?? "",
+                clientSecret: env.GITHUB_CLIENT_SECRET ?? "",
+            }),
+            profile(profile) {
+                return {
+                    id: profile.id.toString(),
+                    name: profile.name ?? profile.login,
+                    email: profile.email,
+                    image: profile.avatar_url,
+                    githubUserName: profile.login,
+                }
+            }
+        },
         /**
          * ...add more providers here.
          *
@@ -65,7 +77,6 @@ export const authOptions: NextAuthOptions = {
          * @see https://next-auth.js.org/providers/github
          */
     ],
-
 };
 
 /**

@@ -14,6 +14,7 @@ export const teamDashboardRouter = createTRPCRouter({
         .query(async ({ ctx, input }) => {
             const currentUserId: string = ctx.session.user.id;
 
+            // Find out if the user has access due to being the team lead
             const team: Team | null = await ctx.db.team.findFirst({
                 where: {
                     teamLead: { id: currentUserId },
@@ -21,10 +22,17 @@ export const teamDashboardRouter = createTRPCRouter({
                 },
             });
 
-            // TODO: allow a team member to view the dashboard
-
             if (!team) {
-                throw new Error("Team not found");
+                // Find out if the user has access due to being a team member
+                const teamMember = await ctx.db.teamMember.findFirst({
+                    where: {
+                        team: { id: input.teamId },
+                        githubUserName: ctx.session.user.githubUserName,
+                    },
+                });
+                if (!teamMember) {
+                    throw new Error("Team not found");
+                }
             }
 
             const { stats, teamMembers, githubRepositories } = await getTeamStats({ team });

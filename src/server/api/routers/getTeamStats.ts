@@ -171,8 +171,6 @@ export const getTeamStats = async ({
         },
     })).map((teamMember: TeamMember) => teamMember.githubUserName);
 
-    console.log(`Team members: teamMembers`, teamMembers, team.id);
-
     const githubRepositories: string[] = (await db.githubRepository.findMany({
         where: {
             teamId: team.id,
