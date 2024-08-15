@@ -25,6 +25,8 @@ type StatsPerRepository = Record<string, RepositoryStats>;
 const CACHE_SCHEMA_VERSION = 12;
 const DEV_MODE = false;
 
+const TWO_WEEKS_AGO = (new Date().getTime()) - 1000 * 60 * 60 * 24 * 7;
+
 const computeTimeToFirstReview = async({
     owner,
     repoName,
@@ -213,6 +215,7 @@ export const getTeamStatsHeadless = async ({
 
     const statsPerRepository: StatsPerRepository = {};
 
+    // Step 1: fetch data from github
     for (const repoPath of githubRepositories) {
         const cachedStats = await db.repoCache.findFirst({
             where: {
@@ -221,7 +224,6 @@ export const getTeamStatsHeadless = async ({
         });
 
         let pullStats: Record<string, PullStats> = {};
-
 
         if (cachedStats?.cache) {
             const cache = JSON.parse(cachedStats.cache) as unknown as RepositoryStats;
@@ -238,9 +240,36 @@ export const getTeamStatsHeadless = async ({
             ) {
                 // Don't fetch PR pages, use cache.
                 statsPerRepository[repoPath] = cache;
-                break;
+                continue;
             }
         }
+
+        const now = new Date();
+
+        if (cachedStats?.lastFetchStarted) {
+            const lastFetchStarted = new Date(cachedStats.lastFetchStarted).getTime();
+            const timeSinceLastFetch = now.getTime() - lastFetchStarted;
+
+            // If fetch was started less than 15 minutes ago,
+            // skip to avoid processing the same repo twice
+            if (timeSinceLastFetch < 1000 * 60 * 15) {
+                throw new Error("Fetch already in progress, please come back in a few minutes");
+            }
+        }
+
+        await db.repoCache.upsert({
+            where: {
+                path: repoPath,
+            },
+            update: {
+                lastFetchStarted: now,
+            },
+            create: {
+                path: repoPath,
+                lastFetchStarted: now,
+                cache: "{}",
+            }
+        });
 
         const owner = repoPath.split("/")[0]!;
         const repoName = repoPath.split("/")[1]!;
@@ -333,28 +362,10 @@ export const getTeamStatsHeadless = async ({
             };
         }
 
-        // Review Time
-        const timesToFirstReview = Object.values(pullStats)
-            .filter(pull => pull.reviewer !== null)
-            .map(pull => pull.timeToFirstReview)
-            .filter((timeToFirstReview) => timeToFirstReview !== null);
-        timesToFirstReview.sort();
-        const countTimesToFirstReview = timesToFirstReview.length;
-        const sumTimesToFirstReview = timesToFirstReview.reduce((a, b) => a + b, 0);
-        const avgTimeToFirstReview = sumTimesToFirstReview / countTimesToFirstReview;
-        const medianTimeToFirstReview = timesToFirstReview[Math.floor(countTimesToFirstReview / 2)];
-
-        // Pull Cycle Time
-        const cycleTimes = Object.values(pullStats)
-            .map(pull => pull.cycleTime)
-            .filter(val => val != null);
-        const sumCycleTime = cycleTimes.reduce((a, b) => a + b, 0);
-        const avgPullRequestCycleTime = sumCycleTime / cycleTimes.length;
-
         const repositoryStats: RepositoryStats = {
-            avgPullRequestCycleTime,
-            avgTimeToFirstReview,
-            medianTimeToFirstReview,
+            avgPullRequestCycleTime: -1,
+            avgTimeToFirstReview: -1,
+            medianTimeToFirstReview: -1,
             pullStats,
             cacheSchemaVersion: CACHE_SCHEMA_VERSION,
         };
@@ -369,12 +380,63 @@ export const getTeamStatsHeadless = async ({
             },
             update: {
                 cache,
+                lastFetchStarted: now,
             },
             create: {
                 path,
                 cache,
+                lastFetchStarted: now,
             }
         });
+    }
+
+    // Step 2: compute team stats
+    for (const repoPath of githubRepositories) {
+        if (!statsPerRepository[repoPath]?.pullStats) {
+            throw new Error("No pull stats found");
+        }
+
+        const pullStats = statsPerRepository[repoPath].pullStats;
+
+        const currentReportPullStats = Object.fromEntries(Object.entries(pullStats)
+            .filter(([_number, pull]) => {
+                // by default, only show stats for last 2 weeks
+                // (we can parameterize this later if needed)
+                if (new Date(pull.created_at).getTime() < TWO_WEEKS_AGO) {
+                    console.log(`PR is older than 2 weeks; skipping`);
+                    return false;
+                }
+                return true;
+            })
+        );
+
+        // Review Time
+        const timesToFirstReview = Object.values(currentReportPullStats)
+            .filter(pull => pull.reviewer !== null)
+            .map(pull => pull.timeToFirstReview)
+            .filter((timeToFirstReview) => timeToFirstReview !== null);
+        timesToFirstReview.sort();
+        const countTimesToFirstReview = timesToFirstReview.length;
+        const sumTimesToFirstReview = timesToFirstReview.reduce((a, b) => a + b, 0);
+        const avgTimeToFirstReview = sumTimesToFirstReview / countTimesToFirstReview;
+        const medianTimeToFirstReview = timesToFirstReview[Math.floor(countTimesToFirstReview / 2)];
+
+        // Pull Cycle Time
+        const cycleTimes = Object.values(currentReportPullStats)
+            .map(pull => pull.cycleTime)
+            .filter(val => val != null);
+        const sumCycleTime = cycleTimes.reduce((a, b) => a + b, 0);
+        const avgPullRequestCycleTime = sumCycleTime / cycleTimes.length;
+
+        const repositoryStats: RepositoryStats = {
+            avgPullRequestCycleTime,
+            avgTimeToFirstReview,
+            medianTimeToFirstReview,
+            pullStats: currentReportPullStats,
+            cacheSchemaVersion: CACHE_SCHEMA_VERSION,
+        };
+
+        statsPerRepository[repoPath] = repositoryStats;
     }
 
     return {

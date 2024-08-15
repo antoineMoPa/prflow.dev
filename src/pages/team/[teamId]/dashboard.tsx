@@ -13,6 +13,7 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, T
 import type { RepositoryStats } from '~/server/api/routers/getTeamStats';
 import React from 'react';
 import { FaLink } from 'react-icons/fa6';
+import { Spinner } from '@nextui-org/react';
 
 function PullTimeToFirstReviewTimeSeriesChart({ data }
     : { data: any[] }
@@ -192,7 +193,31 @@ function TeamDashboard() {
     const router = useRouter();
     const teamId = parseInt(router.query.teamId as string);
 
-    const { data: stats } = api.teamDashboard.getDashboardStats.useQuery({ teamId });
+    const { data: stats, isLoading, isError, error } = api.teamDashboard.getDashboardStats.useQuery({ teamId });
+
+    if (isLoading) {
+        return (
+            <div className="flex justify-center">
+                <Spinner />
+                <div className="w-5"></div>
+                <p className="text-xl ml-2">
+                    Fetching pull requests from github.
+                    <br/>
+                    This may take a few minutes.
+                    <br/>
+                    Please don&apos;t refresh the page.
+                </p>
+            </div>
+        );
+    }
+
+    if (isError) {
+        return <div className="text-red-500 justify-center">
+                   <p className="text-xl text-center">
+                       Error: {error.message}
+                   </p>
+               </div>;
+    }
 
     return (
         <div>
@@ -228,7 +253,8 @@ function TeamDashboard() {
                         </div>
                     </div>
                 );
-            })}
+            })
+            }
         </div>
     );
 }
