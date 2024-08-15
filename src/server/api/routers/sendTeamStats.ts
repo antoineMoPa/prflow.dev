@@ -13,7 +13,9 @@ export const sendTeamStats = async ({
 
     const message = [];
 
-    message.push(`:chart_with_upwards_trend: *Weekly pull request flow digest - ${team.name}* :chart_with_upwards_trend:`);
+    message.push(`:chart_with_upwards_trend: *Pull Request flow digest - ${team.name}* :chart_with_upwards_trend:`);
+
+    message.push(`Statistics are for the last 2 weeks.`);
 
     for (const [repoName, repoStats] of Object.entries(stats)) {
         message.push(`\n*${repoName}*`);
