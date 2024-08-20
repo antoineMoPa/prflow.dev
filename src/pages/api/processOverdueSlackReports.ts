@@ -13,13 +13,13 @@ export default async function handler(_req: NextApiRequest, res: NextApiResponse
     const team = await db.team.findFirst({
         where: {
             lastSlackDate: {
-                lte: cutOff,
+                lt: cutOff,
             },
             slackDaysOfWeek: {
                 contains: dayOfWeek.toString(),
             },
             slackHour: {
-                gte: hour,
+                lte: hour,
             },
         },
     });
