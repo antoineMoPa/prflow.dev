@@ -6,7 +6,7 @@ export default async function handler(_req: NextApiRequest, res: NextApiResponse
     // Find a team that needs processing
     const now = new Date();
     const nowIso = now.toISOString();
-    const cutOff = new Date(now.getTime() - 24 * 60 * 1000).toISOString();
+    const cutOff = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
     const dayOfWeek = now.getDay();
     const hour = now.getUTCHours();
 
