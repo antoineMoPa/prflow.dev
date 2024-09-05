@@ -12,8 +12,8 @@ import 'chartjs-adapter-date-fns';
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, TimeScale, LogarithmicScale);
 import type { RepositoryStats } from '~/server/api/routers/getTeamStats';
 import React from 'react';
-import { FaLink } from 'react-icons/fa6';
-import { Spinner } from '@nextui-org/react';
+import { FaGithub, FaLink } from 'react-icons/fa6';
+import { Button, Link, Spinner } from '@nextui-org/react';
 
 function PullTimeToFirstReviewTimeSeriesChart({ data }
     : { data: any[] }
@@ -63,10 +63,10 @@ function PullTimeToFirstReviewTimeSeriesChart({ data }
                 title: {
                     display: true,
                     text: 'Date',
-                    color: '#eeeeee',
+                    color: '#333333',
                 },
                 ticks: {
-                    color: '#eeeeee',
+                    color: '#333333',
                 },
             },
             y: {
@@ -74,10 +74,10 @@ function PullTimeToFirstReviewTimeSeriesChart({ data }
                 title: {
                     display: true,
                     text: 'Time to first review (hours) [log scale]',
-                    color: '#eeeeee',
+                    color: '#333333',
                 },
                 ticks: {
-                    color: '#eeeeee',
+                    color: '#333333',
                 },
             },
 
@@ -140,25 +140,47 @@ function PullStats({ stats }: { stats: RepositoryStats }) {
 
     return (
         <div>
-            <PullTimeToFirstReviewTimeSeriesChart data={displayStats}/>
-            <h4>Avg. Time to First Review (hours)</h4>
-            <p>{stats.avgTimeToFirstReview.toFixed(2)}</p>
-            <h4>Median Time to First Review (hours)</h4>
-            <p>{stats.medianTimeToFirstReview!.toFixed(4)}</p>
-            <h4>Avg. Pull Request Cycle Time (hours)</h4>
-            <p>{stats.avgPullRequestCycleTime?.toFixed(4)}</p>
+            <h3 className="text-xl">Pull Request Stats</h3>
+            <table className="text-right my-4 w-full">
+                <tr className="text-slate-600 border-b-2 border-slate-600">
+                    <th className="px-1 text-left">Stat</th>
+                    <th className="px-1 text-right">Value</th>
+                    <th className="px-1 text-right">Unit</th>
+                </tr>
+                <tr>
+                    <td className="px-1 text-left">Average Time to First Review</td>
+                    <td className="px-1 text-right">{stats.avgTimeToFirstReview.toFixed(1)}</td>
+                    <td className="px-1 text-right">hours</td>
+                </tr>
+                <tr>
+                    <td className="px-1 text-left">Median Time to First Review</td>
+                    <td className="px-1 text-right">{stats.medianTimeToFirstReview?.toFixed(1)}</td>
+                    <td className="px-1 text-right">hours</td>
+                </tr>
+                <tr>
+                    <td className="px-1 text-left">Average Pull Request Cycle Time</td>
+                    <td className="px-1 text-right">{stats.avgPullRequestCycleTime?.toFixed(0)}</td>
+                    <td className="px-1 text-right">hours</td>
+                </tr>
+                <tr>
+                    <td className="px-1 text-left">Throughput</td>
+                    <td className="px-1 text-right">{stats.throughputPRsPerWeek?.toFixed(0)}</td>
+                    <td className="px-1 text-right">PRs/week</td>
+                </tr>
+            </table>
 
             <table className="text-right mt-4 w-full">
-                <tr>
+                <tr className="text-slate-700 border-b-2 border-slate-700">
                     <th className="px-1 text-left">PR #</th>
                     <th className="px-1 text-center">Author</th>
                     <th className="px-1 text-center">Reviewer</th>
                     <th className="px-1 text-center">Time to First Review (hours)</th>
                     <th className="px-1 text-right">Cycle Time (hours)</th>
+                    <th className="px-1 text-right">Waiting to be merged?</th>
                 </tr>
                 {displayStats.filter(stat => stat.reviewer).map((stat) => {
                     return (
-                        <tr key={stat.number} className="text-slate-300">
+                        <tr key={stat.number}>
                             <td className="px-1 text-left">
                                 <a href={stat.link} target="_blank">
                                     {stat.number}
@@ -168,11 +190,13 @@ function PullStats({ stats }: { stats: RepositoryStats }) {
                             <td className="px-1 text-center">{stat.reviewer}</td>
                             <td className="px-1 text-center">{stat?.timeToFirstReview?.toFixed(2)}</td>
                             <td className="px-1 text-right">{stat?.cycleTime?.toFixed(2)}</td>
+                            <td className="px-1 text-right">{stat?.isWaitingToBeMerged ? 'Yes' : 'No'}</td>
                         </tr>
                     );
                 })}
             </table>
 
+            <PullTimeToFirstReviewTimeSeriesChart data={displayStats}/>
         </div>
     );
 }
@@ -221,30 +245,34 @@ function TeamDashboard() {
 
     return (
         <div>
-            <div className="p-5 m-5 rounded-md border-solid border-2 border-indigo-900">
+            <div className="p-5 m-5 rounded-md border-solid border-2 border-indigo-900 w-1/2 m-auto">
                 <h2 className="text-xl">Your team</h2>
                 <ul className="my-5">
                     {(stats?.teamMembers ?? []).map((member) => {
                         return (
-                            <li key={member} className="flex">
-                                <div className="grow self-center">
-                                    <a href={`https://github.com/${member}`} target="_blank">{member}  <FaLink className="inline-block ml-1" /></a>
-                                </div>
-                            </li>
+                            <Button
+                                as={Link}
+                                href={`https://github.com/${member}`}
+                                target="_blank"
+                                className="m-1"
+                                startContent={<FaGithub/>}
+                                color="primary"
+                            >
+                                {member}
+                            </Button>
                         );
                     })}
                 </ul>
             </div>
-            <h2 className="text-xl pl-5">Github Repositories</h2>
             {stats?.githubRepositories?.map((repo) => {
                 return (
 
-                    <div key={repo} className="flex p-5 m-5 rounded-md border-solid border-2 border-indigo-900">
+                    <div key={repo} className="flex p-5 m-5 rounded-md border-solid border-2 border-indigo-900 text-slate-700 bg-white">
                         <div className="grow self-center">
-                            <h3 className="text-lg text-center">
+                            <h3 className="text-lg text-right">
                                 <a href={`https://github.com/${repo}`} target="_blank">
                                     {repo}
-                                    <FaLink className="inline-block ml-1" />
+                                    <FaGithub className="inline-block ml-1" />
                                 </a>
                             </h3>
                             {stats?.stats[repo] &&
@@ -267,7 +295,7 @@ function TeamDashboardSuspense() {
     }
 
     return (
-        <div className="container w-1/2">
+        <div className="container">
             <TeamDashboard/>
         </div>
     );

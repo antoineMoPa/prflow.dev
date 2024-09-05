@@ -22,6 +22,8 @@ export const sendTeamStats = async ({
         message.push(`Average Time to First Review: ${repoStats.avgTimeToFirstReview.toFixed(1)}`);
         message.push(`Median Time to First Review: ${repoStats.medianTimeToFirstReview?.toFixed(1)}`);
         message.push(`Average Pull Request Cycle Time: ${repoStats.avgPullRequestCycleTime.toFixed(1)}`);
+        message.push(`Team throughput: ${repoStats.throughput}`);
+
     }
 
     message.push(`\n\More details:\nhttps://prflow.dev/team/${team.id}/dashboard`);

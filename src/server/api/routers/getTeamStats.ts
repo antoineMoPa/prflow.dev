@@ -10,19 +10,23 @@ export type PullStats = {
     created_at: string,
     link: string,
     cycleTime: number | null,
+    isMerged: boolean,
+    isReadyForReview: boolean,
+    isWaitingToBeMerged: boolean,
 };
 
 export type RepositoryStats = {
     avgPullRequestCycleTime: number,
     avgTimeToFirstReview: number,
     medianTimeToFirstReview: number | undefined,
+    throughputPRsPerWeek: number,
     pullStats: Record<string, PullStats>,
     cacheSchemaVersion: number,
 };
 
 type StatsPerRepository = Record<string, RepositoryStats>;
 
-const CACHE_SCHEMA_VERSION = 12;
+const CACHE_SCHEMA_VERSION = 16;
 const DEV_MODE = false;
 
 const TWO_WEEKS_AGO = (new Date().getTime()) - 1000 * 60 * 60 * 24 * 7;
@@ -291,7 +295,7 @@ export const getTeamStatsHeadless = async ({
                 direction: "desc",
                 per_page: 100,
                 page,
-                state: "closed",
+                state: "all",
             });
 
             pulls.push(...pullsResponse.data
@@ -349,6 +353,9 @@ export const getTeamStatsHeadless = async ({
             });
 
             const created_at = pull.created_at;
+            const isMerged = pull.merged_at !== null;
+            const isReadyForReview = pull.draft === false;
+            const isWaitingToBeMerged = !isMerged && !isReadyForReview;
 
             pullStats[pull.number] = {
                 // convert to hours
@@ -359,6 +366,9 @@ export const getTeamStatsHeadless = async ({
                 number: pull.number,
                 reviewer: reviews[0]?.user?.login ?? null,
                 cycleTime,
+                isMerged,
+                isReadyForReview,
+                isWaitingToBeMerged,
             };
         }
 
@@ -414,8 +424,9 @@ export const getTeamStatsHeadless = async ({
         const timesToFirstReview = Object.values(currentReportPullStats)
             .filter(pull => pull.reviewer !== null)
             .map(pull => pull.timeToFirstReview)
-            .filter((timeToFirstReview) => timeToFirstReview !== null);
+            .filter((timeToFirstReview) => timeToFirstReview);
         timesToFirstReview.sort();
+        console.log(timesToFirstReview)
         const countTimesToFirstReview = timesToFirstReview.length;
         const sumTimesToFirstReview = timesToFirstReview.reduce((a, b) => a + b, 0);
         const avgTimeToFirstReview = sumTimesToFirstReview / countTimesToFirstReview;
@@ -428,10 +439,14 @@ export const getTeamStatsHeadless = async ({
         const sumCycleTime = cycleTimes.reduce((a, b) => a + b, 0);
         const avgPullRequestCycleTime = sumCycleTime / cycleTimes.length;
 
+        const throughputPRsPerWeek = Object.values(currentReportPullStats)
+            .length / 2;
+
         const repositoryStats: RepositoryStats = {
             avgPullRequestCycleTime,
             avgTimeToFirstReview,
             medianTimeToFirstReview,
+            throughputPRsPerWeek,
             pullStats: currentReportPullStats,
             cacheSchemaVersion: CACHE_SCHEMA_VERSION,
         };
