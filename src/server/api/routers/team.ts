@@ -280,6 +280,10 @@ export const teamRouter = createTRPCRouter({
                 },
             });
 
+            if (!team) {
+                throw new Error("Team not found");
+            }
+
             return generateTeamStatsSlackMessage({ team });
         }),
 
