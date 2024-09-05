@@ -12,8 +12,9 @@ import 'chartjs-adapter-date-fns';
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, TimeScale, LogarithmicScale);
 import type { RepositoryStats } from '~/server/api/routers/getTeamStats';
 import React from 'react';
-import { FaGithub, FaLink } from 'react-icons/fa6';
-import { Button, Link, Spinner } from '@nextui-org/react';
+import { FaGithub } from 'react-icons/fa6';
+import { FaExternalLinkAlt } from 'react-icons/fa';
+import { Button, Link, Spinner, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from '@nextui-org/react';
 
 function PullTimeToFirstReviewTimeSeriesChart({ data }
     : { data: any[] }
@@ -140,61 +141,65 @@ function PullStats({ stats }: { stats: RepositoryStats }) {
 
     return (
         <div>
-            <h3 className="text-xl">Pull Request Stats</h3>
-            <table className="text-right my-4 w-full">
-                <tr className="text-slate-600 border-b-2 border-slate-600">
-                    <th className="px-1 text-left">Stat</th>
-                    <th className="px-1 text-right">Value</th>
-                    <th className="px-1 text-right">Unit</th>
-                </tr>
-                <tr>
-                    <td className="px-1 text-left">Average Time to First Review</td>
-                    <td className="px-1 text-right">{stats.avgTimeToFirstReview.toFixed(1)}</td>
-                    <td className="px-1 text-right">hours</td>
-                </tr>
-                <tr>
-                    <td className="px-1 text-left">Median Time to First Review</td>
-                    <td className="px-1 text-right">{stats.medianTimeToFirstReview?.toFixed(1)}</td>
-                    <td className="px-1 text-right">hours</td>
-                </tr>
-                <tr>
-                    <td className="px-1 text-left">Average Pull Request Cycle Time</td>
-                    <td className="px-1 text-right">{stats.avgPullRequestCycleTime?.toFixed(0)}</td>
-                    <td className="px-1 text-right">hours</td>
-                </tr>
-                <tr>
-                    <td className="px-1 text-left">Throughput</td>
-                    <td className="px-1 text-right">{stats.throughputPRsPerWeek?.toFixed(0)}</td>
-                    <td className="px-1 text-right">PRs/week</td>
-                </tr>
-            </table>
+            <Table className="text-right my-4 w-full">
+                <TableHeader>
+                    <TableColumn className="text-left">Stat</TableColumn>
+                    <TableColumn className="text-right">Value</TableColumn>
+                    <TableColumn className="text-right">Unit</TableColumn>
+                </TableHeader>
+                <TableBody>
+                    <TableRow>
+                        <TableCell className="text-left">Average Time to First Review</TableCell>
+                        <TableCell className="text-right">{stats.avgTimeToFirstReview.toFixed(1)}</TableCell>
+                        <TableCell className="text-right">hours</TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableCell className="text-left">Median Time to First Review</TableCell>
+                        <TableCell className="text-right">{stats.medianTimeToFirstReview?.toFixed(1)}</TableCell>
+                        <TableCell className="text-right">hours</TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableCell className="text-left">Average Pull Request Cycle Time</TableCell>
+                        <TableCell className="text-right">{stats.avgPullRequestCycleTime?.toFixed(0)}</TableCell>
+                        <TableCell className="text-right">hours</TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableCell className="text-left">Throughput</TableCell>
+                        <TableCell className="text-right">{stats.throughputPRsPerWeek?.toFixed(0)}</TableCell>
+                        <TableCell className="text-right">PRs/week</TableCell>
+                    </TableRow>
+                </TableBody>
+            </Table>
 
-            <table className="text-right mt-4 w-full">
-                <tr className="text-slate-700 border-b-2 border-slate-700">
-                    <th className="px-1 text-left">PR #</th>
-                    <th className="px-1 text-center">Author</th>
-                    <th className="px-1 text-center">Reviewer</th>
-                    <th className="px-1 text-center">Time to First Review (hours)</th>
-                    <th className="px-1 text-right">Cycle Time (hours)</th>
-                    <th className="px-1 text-right">Waiting to be merged?</th>
-                </tr>
-                {displayStats.filter(stat => stat.reviewer).map((stat) => {
-                    return (
-                        <tr key={stat.number}>
-                            <td className="px-1 text-left">
-                                <a href={stat.link} target="_blank">
-                                    {stat.number}
-                                </a>
-                            </td>
-                            <td className="px-1 text-center">{stat.author}</td>
-                            <td className="px-1 text-center">{stat.reviewer}</td>
-                            <td className="px-1 text-center">{stat?.timeToFirstReview?.toFixed(2)}</td>
-                            <td className="px-1 text-right">{stat?.cycleTime?.toFixed(2)}</td>
-                            <td className="px-1 text-right">{stat?.isWaitingToBeMerged ? 'Yes' : 'No'}</td>
-                        </tr>
-                    );
-                })}
-            </table>
+
+            <Table className="text-right mt-4 w-full">
+                <TableHeader>
+                    <TableColumn className="text-left">PR #</TableColumn>
+                    <TableColumn className="text-center">Author</TableColumn>
+                    <TableColumn className="text-center">Reviewer</TableColumn>
+                    <TableColumn className="text-center">Time to First Review (hours)</TableColumn>
+                    <TableColumn className="text-right">Cycle Time (hours)</TableColumn>
+                    <TableColumn className="text-right">Waiting to be merged?</TableColumn>
+                </TableHeader>
+                <TableBody>
+                    {displayStats.filter(stat => stat.reviewer).map((stat) => {
+                        return (
+                            <TableRow key={stat.number}>
+                                <TableCell className="text-left">
+                                    <a href={stat.link} target="_blank">
+                                        {stat.number}
+                                    </a>
+                                </TableCell>
+                                <TableCell className="text-center">{stat.author}</TableCell>
+                                <TableCell className="text-center">{stat.reviewer}</TableCell>
+                                <TableCell className="text-center">{stat?.timeToFirstReview?.toFixed(2)}</TableCell>
+                                <TableCell className="text-right">{stat?.cycleTime?.toFixed(2)}</TableCell>
+                                <TableCell className="text-right">{stat?.isWaitingToBeMerged ? 'Yes' : 'No'}</TableCell>
+                            </TableRow>
+                        );
+                    })}
+                </TableBody>
+            </Table>
 
             <PullTimeToFirstReviewTimeSeriesChart data={displayStats}/>
         </div>
@@ -255,7 +260,7 @@ function TeamDashboard() {
                                 href={`https://github.com/${member}`}
                                 target="_blank"
                                 className="m-1"
-                                startContent={<FaGithub/>}
+                                startContent={<FaExternalLinkAlt/>}
                                 color="primary"
                             >
                                 {member}
@@ -270,10 +275,16 @@ function TeamDashboard() {
                     <div key={repo} className="flex p-5 m-5 rounded-md border-solid border-2 border-indigo-900 text-slate-700 bg-white">
                         <div className="grow self-center">
                             <h3 className="text-lg text-right">
-                                <a href={`https://github.com/${repo}`} target="_blank">
+                                <Button
+                                    as={Link}
+                                    href={`https://github.com/${repo}`}
+                                    target="_blank"
+                                    className="m-1"
+                                    startContent={<FaExternalLinkAlt/>}
+                                    color="primary"
+                                >
                                     {repo}
-                                    <FaGithub className="inline-block ml-1" />
-                                </a>
+                                </Button>
                             </h3>
                             {stats?.stats[repo] &&
                                 <RepoStats stats={stats.stats[repo]!} />
