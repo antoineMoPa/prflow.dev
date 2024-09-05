@@ -12,7 +12,6 @@ import 'chartjs-adapter-date-fns';
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, TimeScale, LogarithmicScale);
 import type { RepositoryStats } from '~/server/api/routers/getTeamStats';
 import React from 'react';
-import { FaGithub } from 'react-icons/fa6';
 import { FaExternalLinkAlt } from 'react-icons/fa';
 import { Button, Link, Spinner, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from '@nextui-org/react';
 
@@ -256,6 +255,7 @@ function TeamDashboard() {
                     {(stats?.teamMembers ?? []).map((member) => {
                         return (
                             <Button
+                                key={member}
                                 as={Link}
                                 href={`https://github.com/${member}`}
                                 target="_blank"

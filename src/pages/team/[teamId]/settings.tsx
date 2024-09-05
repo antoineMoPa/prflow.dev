@@ -33,7 +33,7 @@ function GithubRepositoriesEditor() {
     });
 
     return (
-        <div className="p-5 m-5 rounded-md border-solid border-2 border-indigo-900">
+        <div className="p-5 m-5 rounded-md border-solid border-2 border-indigo-900 w-1/2 m-auto">
             <h2 className="text-xl">Github Repositories</h2>
             <ul className="my-5">
                 {allGithubRepositories?.map((githubRepo)  => {
@@ -116,7 +116,7 @@ function AuthTokens() {
     }, [tokenType]);
 
     return (
-        <div className="p-5 m-5 rounded-md border-solid border-2 border-indigo-900">
+        <div className="p-5 m-5 rounded-md border-solid border-2 border-indigo-900 w-1/2 m-auto">
             <h2 className="text-xl">Authentication tokens</h2>
             <p className="text-md">
                 GitHub Instructions
@@ -202,7 +202,7 @@ function SlackReportTest() {
         mutate,
         failureReason,
     } = api.team.sendSlackReport.useMutation();
-
+    const { data: exampleSlackMessage } = api.team.getExampleSlackMessage.useQuery({ teamId });
 
     return (
         <div>
@@ -224,6 +224,11 @@ function SlackReportTest() {
             <div className="mt-2 text-green-500">
                 {isSuccess && <div>Slack report sent successfully!</div>}
             </div>
+            <h2 className="my-2 mt-4">Slack Message Preview</h2>
+            <p>This is the content we send to slack.</p>
+            <pre className="bg-white p-2 rounded-md border-solid border-2 border-indigo-900 text-black">
+                {exampleSlackMessage?.join("\n")}
+            </pre>
         </div>
     );
 }
@@ -251,7 +256,7 @@ function TeamEditor() {
     };
 
     return (
-        <div className="p-5 m-5 rounded-md border-solid border-2 border-indigo-900">
+        <div className="p-5 m-5 rounded-md border-solid border-2 border-indigo-900 w-1/2 m-auto">
             <div>
                 <h2 className="text-xl">Members</h2>
                 <ul className="my-5">
@@ -335,7 +340,7 @@ function TeamEditorSuspense() {
     }
 
     return (
-        <div className="container w-1/2">
+        <div className="container">
             <TeamEditor/>
             <div className="my-10"></div>
             <GithubRepositoriesEditor/>

@@ -5,7 +5,7 @@ import {
     protectedProcedure
 } from "../../../server/api/trpc";
 import { type Team } from "@prisma/client";
-import { sendTeamStats } from "./sendTeamStats";
+import { generateTeamStatsSlackMessage, sendTeamStats } from "./sendTeamStats";
 
 
 export const teamRouter = createTRPCRouter({
@@ -264,6 +264,23 @@ export const teamRouter = createTRPCRouter({
                     type: true,
                 }
             });
+        }),
+
+    getExampleSlackMessage: protectedProcedure
+        .input(z.object({
+            teamId: z.number(),
+        }))
+        .query(async ({ ctx, input }) => {
+            const currentUserId: string = ctx.session.user.id;
+
+            const team: Team | null = await ctx.db.team.findFirst({
+                where: {
+                    teamLead: { id: currentUserId },
+                    id: input.teamId,
+                },
+            });
+
+            return generateTeamStatsSlackMessage({ team });
         }),
 
     createToken: protectedProcedure
