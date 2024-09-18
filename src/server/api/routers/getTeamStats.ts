@@ -19,17 +19,28 @@ export type RepositoryStats = {
     avgPullRequestCycleTime: number,
     avgTimeToFirstReview: number,
     medianTimeToFirstReview: number | undefined,
-    throughputPRsPerWeek: number,
     pullStats: Record<string, PullStats>,
+    weeklyStats: {
+        previousWeekAvgPullRequestCycleTime: number,
+        avgPullRequestCycleTime: number,
+        previousWeekAvgTimeToFirstReview: number,
+        avgTimeToFirstReview: number,
+        previousWeekMedianTimeToFirstReview: number | undefined,
+        medianTimeToFirstReview: number | undefined,
+        throughputPRs: number,
+        previousWeekThroughputPRs: number,
+    },
     cacheSchemaVersion: number,
 };
 
 type StatsPerRepository = Record<string, RepositoryStats>;
 
-const CACHE_SCHEMA_VERSION = 16;
+const CACHE_SCHEMA_VERSION = 19;
 const DEV_MODE = false;
 
-const TWO_WEEKS_AGO = (new Date().getTime()) - 1000 * 60 * 60 * 24 * 7;
+const ONE_WEEK_MS = 1000 * 60 * 60 * 24 * 7;
+const ONE_WEEK_AGO = (new Date().getTime()) - ONE_WEEK_MS;
+const TWO_WEEKS_AGO = (new Date().getTime()) - ONE_WEEK_MS * 2;
 
 const computeTimeToFirstReview = async({
     owner,
@@ -76,8 +87,7 @@ const computeTimeToFirstReview = async({
 
     const comments = commentsResponse.data
         .filter((comment) => comment.user!.login !== pull.user!.login)
-        .filter((comment) => comment.user!.login.includes("[bot]"))
-        .filter((comment) => comment.user!.login.includes("[bot]"))
+        .filter((comment) => !comment.user!.login.includes("[bot]"))
         .filter((comment) => new Date(comment.created_at).getTime() > new Date(readyForReviewDate).getTime())
         .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
@@ -376,8 +386,17 @@ export const getTeamStatsHeadless = async ({
             avgPullRequestCycleTime: -1,
             avgTimeToFirstReview: -1,
             medianTimeToFirstReview: -1,
-            throughputPRsPerWeek: -1,
             pullStats,
+            weeklyStats: {
+                previousWeekAvgPullRequestCycleTime: -1,
+                avgPullRequestCycleTime: -1,
+                previousWeekAvgTimeToFirstReview: -1,
+                avgTimeToFirstReview: -1,
+                previousWeekMedianTimeToFirstReview: -1,
+                medianTimeToFirstReview: -1,
+                throughputPRs: -1,
+                previousWeekThroughputPRs: -1,
+            },
             cacheSchemaVersion: CACHE_SCHEMA_VERSION,
         };
 
@@ -421,6 +440,12 @@ export const getTeamStatsHeadless = async ({
             })
         );
 
+        const previousWeekPullStats = Object.values(currentReportPullStats)
+            .filter(pull => new Date(pull.created_at).getTime() > TWO_WEEKS_AGO && new Date(pull.created_at).getTime() < ONE_WEEK_AGO);
+
+        const currentWeekPullStats = Object.values(currentReportPullStats)
+            .filter(pull => new Date(pull.created_at).getTime() > ONE_WEEK_AGO);
+
         // Review Time
         const timesToFirstReview = Object.values(currentReportPullStats)
             .filter(pull => pull.reviewer !== null)
@@ -428,28 +453,54 @@ export const getTeamStatsHeadless = async ({
             .filter((timeToFirstReview) => timeToFirstReview !== null);
         timesToFirstReview.sort();
 
+        const previousWeekTimesToFirstReview = previousWeekPullStats
+            .filter(pull => pull.reviewer !== null)
+            .map(pull => pull.timeToFirstReview)
+            .filter((timeToFirstReview) => timeToFirstReview !== null);
+        previousWeekTimesToFirstReview.sort();
+
         const countTimesToFirstReview = timesToFirstReview.length;
         const sumTimesToFirstReview = timesToFirstReview.reduce((a, b) => a + b, 0);
         const avgTimeToFirstReview = sumTimesToFirstReview / countTimesToFirstReview;
         const medianTimeToFirstReview = timesToFirstReview[Math.floor(countTimesToFirstReview / 2)];
 
+        const previousWeekCountTimesToFirstReview = previousWeekTimesToFirstReview.length;
+        const previousWeekSumTimesToFirstReview = previousWeekTimesToFirstReview.reduce((a, b) => a + b, 0);
+        const previousWeekAvgTimeToFirstReview = previousWeekSumTimesToFirstReview / previousWeekCountTimesToFirstReview;
+        const previousWeekMedianTimeToFirstReview = previousWeekTimesToFirstReview[Math.floor(previousWeekCountTimesToFirstReview / 2)];
+
         // Pull Cycle Time
-        const cycleTimes = Object.values(currentReportPullStats)
+        const cycleTimes = Object.values(currentWeekPullStats)
             .map(pull => pull.cycleTime)
             .filter(val => val != null);
         const sumCycleTime = cycleTimes.reduce((a, b) => a + b, 0);
         const avgPullRequestCycleTime = sumCycleTime / cycleTimes.length;
 
-        const throughputPRsPerWeek = Object.values(currentReportPullStats)
-            .length / 2;
+        const previousWeekCycleTimes = Object.values(previousWeekPullStats)
+            .map(pull => pull.cycleTime)
+            .filter(val => val != null);
+        const previousWeekSumCycleTime = previousWeekCycleTimes.reduce((a, b) => a + b, 0);
+        const previousWeekAvgPullRequestCycleTime = previousWeekSumCycleTime / previousWeekCycleTimes.length;
+
+        const previousWeekThroughputPRs = previousWeekPullStats.length;
+        const throughputPRs = currentWeekPullStats.length;
 
         const repositoryStats: RepositoryStats = {
             avgPullRequestCycleTime,
             avgTimeToFirstReview,
             medianTimeToFirstReview,
-            throughputPRsPerWeek,
             pullStats: currentReportPullStats,
             cacheSchemaVersion: CACHE_SCHEMA_VERSION,
+            weeklyStats: {
+                avgPullRequestCycleTime: avgPullRequestCycleTime,
+                previousWeekAvgPullRequestCycleTime: previousWeekAvgPullRequestCycleTime,
+                avgTimeToFirstReview,
+                previousWeekAvgTimeToFirstReview,
+                medianTimeToFirstReview,
+                previousWeekMedianTimeToFirstReview,
+                throughputPRs,
+                previousWeekThroughputPRs,
+            }
         };
 
         statsPerRepository[repoPath] = repositoryStats;

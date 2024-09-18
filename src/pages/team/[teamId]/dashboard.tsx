@@ -14,6 +14,7 @@ import type { RepositoryStats } from '~/server/api/routers/getTeamStats';
 import React from 'react';
 import { FaExternalLinkAlt } from 'react-icons/fa';
 import { Button, Link, Spinner, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from '@nextui-org/react';
+import { FaGear } from 'react-icons/fa6';
 
 function PullTimeToFirstReviewTimeSeriesChart({ data }
     : { data: any[] }
@@ -164,7 +165,7 @@ function PullStats({ stats }: { stats: RepositoryStats }) {
                     </TableRow>
                     <TableRow>
                         <TableCell className="text-left">Throughput</TableCell>
-                        <TableCell className="text-right">{stats.throughputPRsPerWeek?.toFixed(0)}</TableCell>
+                        <TableCell className="text-right">{stats.weeklyStats.throughputPRs?.toFixed(0)}</TableCell>
                         <TableCell className="text-right">PRs/week</TableCell>
                     </TableRow>
                 </TableBody>
@@ -284,6 +285,15 @@ function TeamDashboard() {
                                     color="primary"
                                 >
                                     {repo}
+                                </Button>
+                                <Button
+                                    as={Link}
+                                    href={`/team/${teamId}/settings`}
+                                    className="m-1"
+                                    startContent={<FaGear/>}
+                                    color="default"
+                                >
+                                    Settings
                                 </Button>
                             </h3>
                             {stats?.stats[repo] &&

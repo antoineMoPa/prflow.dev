@@ -1,6 +1,24 @@
 import { Team } from "@prisma/client";
 import { getTeamStats } from "./getTeamStats";
 
+const displayDuration = (hours: number) => {
+    // if under one hour, show minutes count
+    if (hours < 1) {
+        return `${(hours * 60).toFixed(0)} minutes`;
+    }
+    return `${hours.toFixed(1)} hours`;
+}
+
+const displayStatWithArrowIcons = (
+    currentWeekStat: number,
+    lastWeekStat: number,
+    statName: string,
+    displayFn: (num: number) => string = num => num.toFixed(1)
+) => {
+    const statIcon = currentWeekStat > lastWeekStat ? ":arrow_up:" : ":arrow_down:";
+    return `${statName}: ${displayFn(currentWeekStat)} - Last week: ${displayFn(lastWeekStat)} ${statIcon}`;
+}
+
 export const generateTeamStatsSlackMessage = async ({
     team,
 } : {
@@ -12,14 +30,35 @@ export const generateTeamStatsSlackMessage = async ({
 
     message.push(`:chart_with_upwards_trend: *Pull Request flow digest - ${team.name}* :chart_with_upwards_trend:`);
 
-    message.push(`Statistics are for the last 2 weeks.`);
-
     for (const [repoName, repoStats] of Object.entries(stats)) {
         message.push(`\n*${repoName}*`);
-        message.push(`Average Time to First Review: ${repoStats.avgTimeToFirstReview.toFixed(1)} hours`);
-        message.push(`Median Time to First Review: ${repoStats.medianTimeToFirstReview?.toFixed(1)} hours`);
-        message.push(`Average Pull Request Cycle Time: ${repoStats.avgPullRequestCycleTime.toFixed(0)} hours`);
-        message.push(`Team throughput: ${repoStats.throughputPRsPerWeek.toFixed(1)} PRs/week`);
+
+        message.push(displayStatWithArrowIcons(
+            repoStats.weeklyStats.avgTimeToFirstReview,
+            repoStats.weeklyStats.previousWeekAvgTimeToFirstReview,
+            "Average Time to First Review",
+            displayDuration
+        ));
+
+        message.push(displayStatWithArrowIcons(
+            repoStats.weeklyStats.medianTimeToFirstReview || 0,
+            repoStats.weeklyStats.previousWeekMedianTimeToFirstReview || 0,
+            "Median Time to First Review",
+            displayDuration
+        ));
+
+        message.push(displayStatWithArrowIcons(
+            repoStats.weeklyStats.avgPullRequestCycleTime,
+            repoStats.weeklyStats.previousWeekAvgPullRequestCycleTime,
+            "Average Cycle Time",
+            displayDuration
+        ));
+
+        const currentWeekThroughput = repoStats.weeklyStats.throughputPRs;
+        const lastWeekThroughput = repoStats.weeklyStats.previousWeekThroughputPRs;
+        const throughputIcon = currentWeekThroughput > lastWeekThroughput ? ":arrow_up:" : ":arrow_down:";
+
+        message.push(`Team throughput: ${currentWeekThroughput.toFixed(1)} PRs/week - Last week: ${lastWeekThroughput.toFixed(1)} PRs/week ${throughputIcon}`);
 
     }
 
