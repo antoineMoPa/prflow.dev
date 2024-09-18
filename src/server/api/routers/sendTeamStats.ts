@@ -41,8 +41,8 @@ export const generateTeamStatsSlackMessage = async ({
         ));
 
         message.push(displayStatWithArrowIcons(
-            repoStats.weeklyStats.medianTimeToFirstReview || 0,
-            repoStats.weeklyStats.previousWeekMedianTimeToFirstReview || 0,
+            repoStats.weeklyStats.medianTimeToFirstReview ?? 0,
+            repoStats.weeklyStats.previousWeekMedianTimeToFirstReview ?? 0,
             "Median Time to First Review",
             displayDuration
         ));
