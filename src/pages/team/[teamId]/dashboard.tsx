@@ -4,132 +4,160 @@ import { useRouter } from 'next/router';
 import Layout from '~/app/_components/Layout';
 import { api } from '../../../trpc/react';
 import { useSession } from 'next-auth/react';
-import { Line } from 'react-chartjs-2';
-import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, TimeScale, LogarithmicScale } from 'chart.js';
-import 'chartjs-adapter-date-fns';
+import { Pie } from 'react-chartjs-2';
+import { Chart as ChartJS, CategoryScale, Title, Tooltip, Legend, ArcElement } from 'chart.js';
 
 // Register the necessary components with Chart.js
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, TimeScale, LogarithmicScale);
+ChartJS.register(CategoryScale, Title, Tooltip, Legend, ArcElement);
 import type { RepositoryStats } from '~/server/api/routers/getTeamStats';
 import React from 'react';
 import { FaExternalLinkAlt } from 'react-icons/fa';
 import { Button, Link, Spinner, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from '@nextui-org/react';
 import { FaGear } from 'react-icons/fa6';
 
-function PullTimeToFirstReviewTimeSeriesChart({ data }
-    : { data: any[] }
-) {
-    let displayData: any[] = data;
+function PRAuthoredPerDeveloperPieChart({ stats }: { stats: RepositoryStats }) {
+    const pullStatsPerDeveloper = Object.values(stats.pullStats ?? {}).reduce((acc, stat) => {
+        if (!stat.author) {
+            return acc;
+        }
 
-    // Filter out times below 0 minutes
-    displayData = displayData.filter((stat: any) => stat.timeToFirstReview > 0);
+        if (!acc[stat.author]) {
+            acc[stat.author] = 0;
+        }
 
+        acc[stat.author]! += 1;
 
-    displayData = displayData.map((stat: any) => {
-        return {
-            ...stat,
-            x: new Date(stat.created_at).getTime(),
-            y: stat.timeToFirstReview,
-            data: stat,
-        };
-    }).filter(
-        stat => stat.timeToFirstReview !== null
-    );
+        return acc;
+    }, {} as Record<string, number>);
 
-    // we need to sort the data by created_at
-    displayData.sort((a: any, b: any) => {
-        return a.x - b.x;
-    });
-
-    const chartData = {
+    const data = {
+        labels: Object.keys(pullStatsPerDeveloper),
         datasets: [
             {
-                label: 'Time to first review',
-                data: displayData,
-                fill: false,
-                backgroundColor: 'rgb(255, 99, 132)',
-                borderColor: 'rgba(255, 99, 132, 0.2)',
+                label: 'PRs authored',
+                data: Object.values(pullStatsPerDeveloper),
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.2)',
+                    'rgba(54, 162, 235, 0.2)',
+                    'rgba(255, 206, 86, 0.2)',
+                    'rgba(75, 192, 192, 0.2)',
+                    'rgba(153, 102, 255, 0.2)',
+                    'rgba(255, 159, 64, 0.2)',
+                    'rgba(255, 99, 132, 0.2)',
+                    'rgba(54, 162, 235, 0.2)',
+                    'rgba(255, 206, 86, 0.2)',
+                    'rgba(75, 192, 192, 0.2)',
+                    'rgba(153, 102, 255, 0.2)',
+                    'rgba(255, 159, 64, 0.2)',
+                ],
+                borderColor: [
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(153, 102, 255, 1)',
+                    'rgba(255, 159, 64, 1)',
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(153, 102, 255, 1)',
+                    'rgba(255, 159, 64, 1)',
+                ],
+                borderWidth: 1,
             },
         ],
     };
 
     const options = {
         responsive: true,
-        scales: {
-            x: {
-                type: 'time',
-                time: {
-                    unit: 'day',
-                },
-                title: {
-                    display: true,
-                    text: 'Date',
-                    color: '#333333',
-                },
-                ticks: {
-                    color: '#333333',
-                },
-            },
-            y: {
-                type: 'logarithmic',
-                title: {
-                    display: true,
-                    text: 'Time to first review (hours) [log scale]',
-                    color: '#333333',
-                },
-                ticks: {
-                    color: '#333333',
-                },
-            },
-
-        },
-        onClick: function(_e: any, activeElements: any) {
-            const element = activeElements[0]?.element;
-
-            if (!element) {
-                return;
-            }
-
-            const link = element.$context.raw.data.link;
-            if (!link) {
-                return;
-            }
-
-            window.open(link, '_blank');
-        },
         plugins: {
             legend: {
-                display: false,
-                color: '#ffffff',
+                display: true,
+                position: 'right',
             },
             title: {
                 display: true,
-                text: 'Time to first review',
-                color: '#ffffff',
+                text: 'PRs per developer',
             },
-            tooltip: {
-                callbacks: {
-                    label: function(context: any) {
-                        const label = context.dataset.label || '';
-                        const yValue = context.raw.y;
-                        const author = context.raw.author || '';
-                        const number = context.raw.data.number || '';
-                        const reviewer = context.raw.data.reviewer || '';
-
-                        return [
-                            `${label}: ${yValue.toFixed(2)} hours`,
-                            `#${number}`,
-                            `Author: ${author}`,
-                            `Reviewer: ${reviewer}`,
-                        ];
-                    }
-                }
-            }
         },
     };
 
     return (
-        <Line data={chartData} options={options as any} />
+        <Pie data={data} options={options} />
+    );
+}
+
+function PRsReviewedPerDeveloperPieChart({ stats }: { stats: RepositoryStats }) {
+    const pullStatsPerDeveloper = Object.values(stats.pullStats ?? {}).reduce((acc, stat) => {
+        if (!stat.reviewer) {
+            return acc;
+        }
+
+        if (!acc[stat.reviewer]) {
+            acc[stat.reviewer] = 0;
+        }
+
+        acc[stat.reviewer]! += 1;
+
+        return acc;
+    }, {} as Record<string, number>);
+
+    const data = {
+        labels: Object.keys(pullStatsPerDeveloper),
+        datasets: [
+            {
+                label: 'PRs reviewed',
+                data: Object.values(pullStatsPerDeveloper),
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.2)',
+                    'rgba(54, 162, 235, 0.2)',
+                    'rgba(255, 206, 86, 0.2)',
+                    'rgba(75, 192, 192, 0.2)',
+                    'rgba(153, 102, 255, 0.2)',
+                    'rgba(255, 159, 64, 0.2)',
+                    'rgba(255, 99, 132, 0.2)',
+                    'rgba(54, 162, 235, 0.2)',
+                    'rgba(255, 206, 86, 0.2)',
+                    'rgba(75, 192, 192, 0.2)',
+                    'rgba(153, 102, 255, 0.2)',
+                    'rgba(255, 159, 64, 0.2)',
+                ],
+                borderColor: [
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(153, 102, 255, 1)',
+                    'rgba(255, 159, 64, 1)',
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(153, 102, 255, 1)',
+                    'rgba(255, 159, 64, 1)',
+                ],
+                borderWidth: 1,
+            },
+        ],
+    };
+
+    const options = {
+        responsive: true,
+        plugins: {
+            legend: {
+                display: true,
+                position: 'right',
+            },
+            title: {
+                display: true,
+                text: 'Who reviews our PRs?',
+            },
+        },
+    };
+
+    return (
+        <Pie data={data} options={options} />
     );
 }
 
@@ -141,6 +169,16 @@ function PullStats({ stats }: { stats: RepositoryStats }) {
 
     return (
         <div>
+            <div className="mt-4">
+                <div className="w-1/4 inline-flex">
+                    <PRAuthoredPerDeveloperPieChart stats={stats} />
+                </div>
+                <div className="w-1/4 inline-flex">
+                    <PRsReviewedPerDeveloperPieChart stats={stats} />
+                </div>
+            </div>
+
+            <h2 className="text-xl mt-4">Pull Request Stats Summary</h2>
             <Table className="text-right my-4 w-full">
                 <TableHeader>
                     <TableColumn className="text-left">Stat</TableColumn>
@@ -171,7 +209,7 @@ function PullStats({ stats }: { stats: RepositoryStats }) {
                 </TableBody>
             </Table>
 
-
+            <h2 className="text-xl mt-4">Pull Request Details</h2>
             <Table className="text-right mt-4 w-full">
                 <TableHeader>
                     <TableColumn className="text-left">PR #</TableColumn>
@@ -200,8 +238,6 @@ function PullStats({ stats }: { stats: RepositoryStats }) {
                     })}
                 </TableBody>
             </Table>
-
-            <PullTimeToFirstReviewTimeSeriesChart data={displayStats}/>
         </div>
     );
 }
