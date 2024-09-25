@@ -1,4 +1,4 @@
-import { Team } from "@prisma/client";
+import { Team,  } from "@prisma/client";
 import { getTeamStats } from "./getTeamStats";
 
 const displayDuration = (hours: number) => {
@@ -9,14 +9,26 @@ const displayDuration = (hours: number) => {
     return `${hours.toFixed(1)} hours`;
 }
 
-const displayStatWithArrowIcons = (
+const LOWER = 'lower';
+const HIGHER = 'higher';
+
+const displayStat = (
     currentWeekStat: number,
     lastWeekStat: number,
     statName: string,
-    displayFn: (num: number) => string = num => num.toFixed(1)
+    displayFn: (num: number) => string = num => num.toFixed(1),
+    { goal }: { goal: { value: number, valueShouldBe: 'lower' | 'higher' } },
 ) => {
-    const statIcon = currentWeekStat > lastWeekStat ? ":arrow_up:" : ":arrow_down:";
-    return `${statName}: ${displayFn(currentWeekStat)} - Last week: ${displayFn(lastWeekStat)} ${statIcon}`;
+    const statMessage = `*${statName}*:\n${displayFn(currentWeekStat)} - Last week: ${displayFn(lastWeekStat)}`;
+        const isGoalMet = goal.valueShouldBe === LOWER ? currentWeekStat < goal.value : currentWeekStat > goal.value;
+    const goalIcon = isGoalMet ? ":white_check_mark:" : ":upside_down_face:";
+    const goalMessage = `Goal: ${goal.valueShouldBe === LOWER ? "<" : ">"} ${displayFn(goal.value)} ${goalIcon}`;
+
+    const isProgressingTowardsGoal = goal.valueShouldBe === LOWER ? currentWeekStat < lastWeekStat : currentWeekStat > lastWeekStat;
+
+    const progressMessage = isProgressingTowardsGoal ? "doing better than last week" : "doing worse than last week";
+
+    return `${statMessage} - ${goalMessage} - ${progressMessage}`;
 }
 
 export const generateTeamStatsSlackMessage = async ({
@@ -24,7 +36,26 @@ export const generateTeamStatsSlackMessage = async ({
 } : {
     team: Team;
 }): Promise<string[]> => {
-    const { stats } = await getTeamStats({ team });
+
+    const { stats, teamMembers } = await getTeamStats({ team });
+    const goals = {
+        avgTimeToFirstReview: {
+            value: 1,
+            valueShouldBe: LOWER,
+        },
+        medianTimeToFirstReview: {
+            value: 1,
+            valueShouldBe: LOWER,
+        },
+        avgPullRequestCycleTime: {
+            value: 24,
+            valueShouldBe: LOWER,
+        },
+        throughputPRs: {
+            value: teamMembers.length * 5, // 1 PRs per day per team member makes sense.
+            valueShouldBe: HIGHER,
+        },
+    }
 
     const message = [];
 
@@ -33,33 +64,41 @@ export const generateTeamStatsSlackMessage = async ({
     for (const [repoName, repoStats] of Object.entries(stats)) {
         message.push(`\n*${repoName}*`);
 
-        message.push(displayStatWithArrowIcons(
+        message.push(displayStat(
             repoStats.weeklyStats.avgTimeToFirstReview,
             repoStats.weeklyStats.previousWeekAvgTimeToFirstReview,
             "Average Time to First Review",
-            displayDuration
+            displayDuration,
+            { goal: goals.avgTimeToFirstReview },
         ));
 
-        message.push(displayStatWithArrowIcons(
+        message.push(displayStat(
             repoStats.weeklyStats.medianTimeToFirstReview ?? 0,
             repoStats.weeklyStats.previousWeekMedianTimeToFirstReview ?? 0,
             "Median Time to First Review",
-            displayDuration
+            displayDuration,
+            { goal: goals.medianTimeToFirstReview },
         ));
 
-        message.push(displayStatWithArrowIcons(
+        message.push(displayStat(
             repoStats.weeklyStats.avgPullRequestCycleTime,
             repoStats.weeklyStats.previousWeekAvgPullRequestCycleTime,
             "Average Cycle Time",
-            displayDuration
+            displayDuration,
+            { goal: goals.avgPullRequestCycleTime },
         ));
 
         const currentWeekThroughput = repoStats.weeklyStats.throughputPRs;
         const lastWeekThroughput = repoStats.weeklyStats.previousWeekThroughputPRs;
-        const throughputIcon = currentWeekThroughput > lastWeekThroughput ? ":arrow_up:" : ":arrow_down:";
 
-        message.push(`Team throughput: ${currentWeekThroughput.toFixed(1)} PRs/week - Last week: ${lastWeekThroughput.toFixed(1)} PRs/week ${throughputIcon}`);
-
+        // team throughput
+        message.push(displayStat(
+            currentWeekThroughput,
+            lastWeekThroughput,
+            "Team Throughput",
+            num => `${num.toFixed(1)} PRs/week`,
+            { goal: goals.throughputPRs },
+        ));
     }
 
     message.push(`\n\More details:\nhttps://prflow.dev/team/${team.id}/dashboard`);
