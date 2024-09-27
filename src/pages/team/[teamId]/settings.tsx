@@ -113,6 +113,21 @@ function AuthTokens() {
         if (tokenType === "github") {
             setName("github token");
         }
+        if (tokenType === "jira_domain") {
+            setName("jira domain");
+        }
+        if (tokenType === "jira_auth_token") {
+            setName("jira auth token");
+        }
+        if (tokenType === "jira_board_id") {
+            setName("jira board id");
+        }
+        if (tokenType === "jira_project_id") {
+            setName("jira project id");
+        }
+        if (tokenType === "jira_user_email") {
+            setName("jira user email");
+        }
     }, [tokenType]);
 
     return (
@@ -130,6 +145,28 @@ function AuthTokens() {
                     github.com/settings/tokens
                 </Link>
                 <p>Make sure to use a classic token and give repo permissions.</p>
+            </p>
+            <p className="text-md mt-4">
+                Jira Instructions
+            </p>
+            <p>
+                Your domain should look like this: https://your-domain.atlassian.net<br/>
+
+                You can find your auth token here:&nbsp;
+                <Link
+                    href="https://id.atlassian.com/manage-profile/security/api-tokens"
+                    className="text-blue-500"
+                    target="_blank">
+                    id.atlassian.com/manage-profile/security/api-tokens
+                </Link>
+                <br/>
+
+                Your board id is a number that can be found in the URL when you are viewing
+                a sprint or backlog in Jira.<br/>
+
+                Your project id what your issues usually start with. (ex: the "MR" in "MR-1234")<br/>
+
+                Your user email is the email you use to login to Jira. We use it to communicate with JIRA's API, using your API token.
             </p>
             <ul className="my-5">
                 {allAuthTokens?.map((authToken)  => {
@@ -177,8 +214,13 @@ function AuthTokens() {
                         label="Token Type"
                         onChange={(e) => setTokenType(e.target.value)}
                     >
-                       <SelectItem key="github">GitHub</SelectItem>
-                       <SelectItem key="slack_webhook_url">Slack Webhook URL</SelectItem>
+                        <SelectItem key="github">GitHub</SelectItem>
+                        <SelectItem key="slack_webhook_url">Slack Webhook URL</SelectItem>
+                        <SelectItem key="jira_domain">Jira Domain</SelectItem>
+                        <SelectItem key="jira_auth_token">Jira Auth Token</SelectItem>
+                        <SelectItem key="jira_board_id">Jira Board ID</SelectItem>
+                        <SelectItem key="jira_project_id">Jira Project Id</SelectItem>
+                        <SelectItem key="jira_user_email">Jira User Email</SelectItem>
                     </Select>
                     <Button
                         type="submit"

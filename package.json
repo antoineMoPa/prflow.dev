@@ -36,6 +36,7 @@
         "date-fns": "^3.6.0",
         "dotenv": "^16.4.5",
         "framer-motion": "^11.3.19",
+        "jira.js": "^4.0.2",
         "luxon": "^3.5.0",
         "next": "^14.2.4",
         "next-auth": "^4.24.7",

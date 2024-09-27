@@ -1,6 +1,7 @@
 import { Octokit, RestEndpointMethodTypes } from "@octokit/rest";
 import { db } from "../../db";
 import { GithubRepository, Team, TeamMember } from "@prisma/client";
+import { Version3Client } from 'jira.js';
 
 export type PullStats = {
     timeToFirstReview: number | null,
@@ -204,17 +205,66 @@ export const getTeamStats = async ({
         throw new Error("GitHub token not found");
     }
 
-    return getTeamStatsHeadless({
+    const jiraToken = (await db.authToken.findFirst({
+        where: {
+            teamId: team.id,
+            type: "jira_auth_token",
+        },
+    }))?.value;
+
+    const jiraDomain = (await db.authToken.findFirst({
+        where: {
+            teamId: team.id,
+            type: "jira_domain",
+        },
+    }))?.value;
+
+    const jiraBoardId = (await db.authToken.findFirst({
+        where: {
+            teamId: team.id,
+            type: "jira_board_id",
+        },
+    }))?.value;
+
+    const jiraProjectId = (await db.authToken.findFirst({
+        where: {
+            teamId: team.id,
+            type: "jira_project_id",
+        },
+    }))?.value;
+
+    const jiraUserEmail = (await db.authToken.findFirst({
+        where: {
+            teamId: team.id,
+            type: "jira_user_email",
+        },
+    }))?.value;
+
+    let stats = await getGithubTeamStats({
         githubToken,
         teamMembers,
         githubRepositories,
     });
+
+    if (jiraToken && jiraDomain && jiraBoardId && jiraProjectId && jiraUserEmail) {
+        stats = {
+            ...stats,
+            ...await getJiraTeamStats({
+                jiraToken,
+                jiraDomain,
+                teamMembers,
+                jiraBoardId,
+                jiraProjectId,
+                jiraUserEmail,
+            }),
+        }
+    }
+
+    return stats;
 };
 
-/**
- * The easily testable part of getTeamStats
- */
-export const getTeamStatsHeadless = async ({
+
+export const getGithubTeamStats = async ({
     githubToken,
     teamMembers,
     githubRepositories,
@@ -512,3 +562,38 @@ export const getTeamStatsHeadless = async ({
         githubRepositories,
     };
 };
+
+export const getJiraTeamStats = async ({
+    jiraToken,
+    jiraDomain,
+    teamMembers,
+    jiraBoardId,
+    jiraProjectId,
+    jiraUserEmail,
+}: {
+    jiraToken: string,
+    jiraDomain: string,
+    teamMembers: string[],
+    jiraBoardId: string,
+    jiraProjectId: string,
+    jiraUserEmail: string,
+}) => {
+    const client = new Version3Client({
+        host: jiraDomain,
+        authentication: {
+            basic: {
+                email: jiraUserEmail,
+                apiToken: jiraToken
+            },
+        },
+    });
+
+    const issues = await client.issueSearch.searchForIssuesUsingJql({
+        jql: `sprint in openSprints() AND project="${jiraProjectId}"`,
+        maxResults: 100,
+    });
+
+    console.log(issues);
+
+    return {};
+}
