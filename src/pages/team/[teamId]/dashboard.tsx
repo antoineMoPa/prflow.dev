@@ -74,7 +74,7 @@ function PRAuthoredPerDeveloperPieChart({ stats }: { stats: RepositoryStats }) {
         plugins: {
             legend: {
                 display: true,
-                position: 'right',
+                position: 'right' as const,
             },
             title: {
                 display: true,
@@ -147,7 +147,7 @@ function PRsReviewedPerDeveloperPieChart({ stats }: { stats: RepositoryStats }) 
         plugins: {
             legend: {
                 display: true,
-                position: 'right',
+                position: 'right' as const,
             },
             title: {
                 display: true,

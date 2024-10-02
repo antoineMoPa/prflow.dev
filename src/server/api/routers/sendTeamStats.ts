@@ -41,19 +41,19 @@ export const generateTeamStatsSlackMessage = async ({
     const goals = {
         avgTimeToFirstReview: {
             value: 1,
-            valueShouldBe: LOWER,
+            valueShouldBe: 'lower' as const,
         },
         medianTimeToFirstReview: {
             value: 1,
-            valueShouldBe: LOWER,
+            valueShouldBe: 'lower' as const,
         },
         avgPullRequestCycleTime: {
             value: 24,
-            valueShouldBe: LOWER,
+            valueShouldBe: 'lower' as const,
         },
         throughputPRs: {
             value: teamMembers.length * 5, // 1 PRs per day per team member makes sense.
-            valueShouldBe: HIGHER,
+            valueShouldBe: 'higher' as const,
         },
     }
 
