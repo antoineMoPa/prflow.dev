@@ -252,8 +252,6 @@ export const getTeamStats = async ({
             ...await getJiraTeamStats({
                 jiraToken,
                 jiraDomain,
-                teamMembers,
-                jiraBoardId,
                 jiraProjectId,
                 jiraUserEmail,
             }),
@@ -566,15 +564,11 @@ export const getGithubTeamStats = async ({
 export const getJiraTeamStats = async ({
     jiraToken,
     jiraDomain,
-    teamMembers,
-    jiraBoardId,
     jiraProjectId,
     jiraUserEmail,
 }: {
     jiraToken: string,
     jiraDomain: string,
-    teamMembers: string[],
-    jiraBoardId: string,
     jiraProjectId: string,
     jiraUserEmail: string,
 }) => {

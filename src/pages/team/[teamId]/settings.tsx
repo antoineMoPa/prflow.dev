@@ -164,9 +164,9 @@ function AuthTokens() {
                 Your board id is a number that can be found in the URL when you are viewing
                 a sprint or backlog in Jira.<br/>
 
-                Your project id what your issues usually start with. (ex: the "MR" in "MR-1234")<br/>
+                Your project id what your issues usually start with. (ex: the &quot;MR&quot; in &quot;MR-1234&quot;)<br/>
 
-                Your user email is the email you use to login to Jira. We use it to communicate with JIRA's API, using your API token.
+                Your user email is the email you use to login to Jira. We use it to communicate with JIRA&lsquo;s API, using your API token.
             </p>
             <ul className="my-5">
                 {allAuthTokens?.map((authToken)  => {

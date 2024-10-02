@@ -10,7 +10,6 @@ const displayDuration = (hours: number) => {
 }
 
 const LOWER = 'lower';
-const HIGHER = 'higher';
 
 const displayStat = (
     currentWeekStat: number,
