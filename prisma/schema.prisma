@@ -60,7 +60,7 @@ model GithubRepository {
 // Multiple teams could read the same repo path,
 // so let's not directly link it to GithubRepository
 // (Assuming we never support self-hosted github)
-model RepoCache {
+model Cache {
   path             String   @id
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt

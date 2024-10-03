@@ -279,7 +279,7 @@ export const getGithubTeamStats = async ({
 
     // Step 1: fetch data from github
     for (const repoPath of githubRepositories) {
-        const cachedStats = await db.repoCache.findFirst({
+        const cachedStats = await db.cache.findFirst({
             where: {
                 path: repoPath,
             },
@@ -319,7 +319,7 @@ export const getGithubTeamStats = async ({
             }
         }
 
-        await db.repoCache.upsert({
+        await db.cache.upsert({
             where: {
                 path: repoPath,
             },
@@ -452,7 +452,7 @@ export const getGithubTeamStats = async ({
 
         const cache = JSON.stringify(repositoryStats);
         const path = repoPath;
-        await db.repoCache.upsert({
+        await db.cache.upsert({
             where: {
                 path,
             },
@@ -586,6 +586,8 @@ export const getJiraTeamStats = async ({
         jql: `sprint in openSprints() AND project="${jiraProjectId}"`,
         maxResults: 100,
     });
+
+
 
     console.log(issues);
 
