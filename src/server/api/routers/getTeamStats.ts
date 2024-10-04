@@ -1,7 +1,8 @@
 import { Octokit, RestEndpointMethodTypes } from "@octokit/rest";
 import { db } from "../../db";
 import { GithubRepository, Team, TeamMember } from "@prisma/client";
-import { Version3Client } from 'jira.js';
+import { AgileClient, Version3Client } from 'jira.js';
+import { Issue } from "jira.js/out/version3/models";
 
 export type PullStats = {
     timeToFirstReview: number | null,
@@ -34,9 +35,15 @@ export type RepositoryStats = {
     cacheSchemaVersion: number,
 };
 
+export type JiraTaskStats = {
+    issueDetail: Issue,
+    cacheSchemaVersion: number,
+}
+
 type StatsPerRepository = Record<string, RepositoryStats>;
 
-const CACHE_SCHEMA_VERSION = 19;
+const GITHUB_CACHE_SCHEMA_VERSION = 20;
+const JIRA_CACHE_SCHEMA_VERSION = 2;
 const DEV_MODE = false;
 
 const ONE_WEEK_MS = 1000 * 60 * 60 * 24 * 7;
@@ -290,14 +297,14 @@ export const getGithubTeamStats = async ({
         if (cachedStats?.cache) {
             const cache = JSON.parse(cachedStats.cache) as unknown as RepositoryStats;
 
-            if (cache.cacheSchemaVersion == CACHE_SCHEMA_VERSION) {
+            if (cache.cacheSchemaVersion == GITHUB_CACHE_SCHEMA_VERSION) {
                 pullStats = cache.pullStats;
             }
 
             const CACHE_CUTOFF = 1000 * 60 * 60 * 24; // 1 day
             const cacheDate = new Date(cachedStats.updatedAt).getTime();
 
-            if (cache.cacheSchemaVersion == CACHE_SCHEMA_VERSION &&
+            if (cache.cacheSchemaVersion == GITHUB_CACHE_SCHEMA_VERSION &&
                 (new Date().getTime() - cacheDate) < CACHE_CUTOFF
             ) {
                 // Don't fetch PR pages, use cache.
@@ -445,7 +452,7 @@ export const getGithubTeamStats = async ({
                 throughputPRs: -1,
                 previousWeekThroughputPRs: -1,
             },
-            cacheSchemaVersion: CACHE_SCHEMA_VERSION,
+            cacheSchemaVersion: GITHUB_CACHE_SCHEMA_VERSION,
         };
 
         statsPerRepository[repoPath] = repositoryStats;
@@ -538,7 +545,7 @@ export const getGithubTeamStats = async ({
             avgTimeToFirstReview,
             medianTimeToFirstReview,
             pullStats: currentReportPullStats,
-            cacheSchemaVersion: CACHE_SCHEMA_VERSION,
+            cacheSchemaVersion: GITHUB_CACHE_SCHEMA_VERSION,
             weeklyStats: {
                 avgPullRequestCycleTime: avgPullRequestCycleTime,
                 previousWeekAvgPullRequestCycleTime: previousWeekAvgPullRequestCycleTime,
@@ -561,6 +568,26 @@ export const getGithubTeamStats = async ({
     };
 };
 
+type IssueStats = {
+    cycleTime?: number, // hours
+    inProgressTime?: number, // hours
+    storyPoints?: number, // hours
+    status?: string,
+};
+
+type AggregatedIssueStats = {
+    completedPoints: number,
+    pointsToDo: number,
+    pointsInProgress: number,
+    pointsAddedMidSprint: number,
+    averageCycleTime: number, // hours
+}
+
+type GetJiraTeamStats = {
+    issueStats: Record<string, IssueStats>,
+    aggregatedStats: AggregatedIssueStats,
+}
+
 export const getJiraTeamStats = async ({
     jiraToken,
     jiraDomain,
@@ -571,7 +598,7 @@ export const getJiraTeamStats = async ({
     jiraDomain: string,
     jiraProjectId: string,
     jiraUserEmail: string,
-}) => {
+}): Promise<GetJiraTeamStats> => {
     const client = new Version3Client({
         host: jiraDomain,
         authentication: {
@@ -582,14 +609,217 @@ export const getJiraTeamStats = async ({
         },
     });
 
+    //const agileClient = new AgileClient({
+    //    host: jiraDomain,
+    //    authentication: {
+    //        basic: {
+    //            email: jiraUserEmail,
+    //            apiToken: jiraToken
+    //        },
+    //    },
+    //});
+    //
+    //const sprints = await agileClient.board.getAllSprints({
+    //    boardId: parseInt(jiraProjectId),
+    //    state: "active",
+    //});
+    //const currentSprint = sprints.values?.[0];
+    //const sprintStartDate: Date | null = currentSprint?.startDate ? new Date(currentSprint?.startDate): null;
+
     const issues = await client.issueSearch.searchForIssuesUsingJql({
         jql: `sprint in openSprints() AND project="${jiraProjectId}"`,
         maxResults: 100,
     });
 
+    // JIRA points are stored in a custom field
+    // So let's find it.
+    const fields = await client.issueFields.getFields();
+    const storyPointsField: string | undefined = Object.values(fields).find((field) => field.name === "Story Points")?.id;
 
 
-    console.log(issues);
+    // This is a map of issue key to stats that we either get from our cache in DB
+    // or fetch from Jira API. (then store in cache)
+    const statsPerIssue: Record<string, JiraTaskStats> = {};
 
-    return {};
+    for (const issue of issues?.issues ?? []) {
+        const now = new Date();
+        const path = `${jiraDomain}-${jiraProjectId}-${issue.key}`;
+
+        // Check if we already have this issue in cache
+        const cachedStats = await db.cache.findFirst({
+            where: {
+                path,
+            },
+        });
+
+        if (cachedStats) {
+            const cache = JSON.parse(cachedStats.cache) as unknown as JiraTaskStats;
+            const CACHE_CUTOFF = 1000 * 60 * 60 * 24; // 1 day
+            const cacheDate = new Date(cachedStats.updatedAt).getTime();
+
+            if (cache.cacheSchemaVersion == JIRA_CACHE_SCHEMA_VERSION &&
+                (new Date().getTime() - cacheDate) < CACHE_CUTOFF
+            ) {
+                // Don't fetch, use cache.
+                statsPerIssue[path] = cache;
+                console.log("Using cache for issue", issue.key);
+                continue;
+            }
+        }
+
+        const issueDetail = await client.issues.getIssue({
+            issueIdOrKey: issue.key,
+            expand: ["changelog"],
+        });
+
+        if (!issueDetail) {
+            console.error(`Issue ${issue.key} not found`);
+            continue;
+        }
+
+        const stats: JiraTaskStats = {
+            issueDetail,
+            cacheSchemaVersion: JIRA_CACHE_SCHEMA_VERSION
+        };
+
+        const cache = JSON.stringify(stats);
+
+        await db.cache.upsert({
+            where: {
+                path,
+            },
+            update: {
+                cache,
+                lastFetchStarted: now,
+            },
+            create: {
+                path,
+                cache,
+                lastFetchStarted: now,
+            }
+        });
+    }
+
+    const aggregatedStats: AggregatedIssueStats = {
+        completedPoints: 0,
+        pointsToDo: 0,
+        pointsInProgress: 0,
+        pointsAddedMidSprint: 0,
+        averageCycleTime: 0,
+    };
+
+    const issueStats: Record<string, IssueStats> = {};
+
+    for (const [key, issue] of Object.entries(statsPerIssue)) {
+        issueStats[key] = {
+            status: issue.issueDetail.fields.status?.name,
+        };
+
+        // compute cycle time
+        // Cycle time is defined as the time between the first transition to "In Progress"
+        // and the first transition to "Done"
+        // We can use the changelog to compute this
+        const changelog = issue.issueDetail.changelog;
+        if (!changelog) {
+            continue;
+        }
+
+        const status = issue.issueDetail.fields.status?.name;
+
+
+        const historiesWithInprogressItems = changelog.histories?.
+            filter((history) => history.items?.some((item) => item.fieldId === "status" && item.toString === "In Progress"));
+        const historiesWithDoneItems = changelog.histories?.
+            filter((history) => history.items?.some((item) => item.fieldId === "status" && item.toString === "Done"));
+
+        const firstInProgressTimeString = historiesWithInprogressItems?.[0]?.created;
+        const lastDoneTimeString = historiesWithDoneItems?.[historiesWithDoneItems.length - 1]?.created;
+
+        if (status == 'Done') {
+
+            // Compute cycle time
+
+            if (lastDoneTimeString && firstInProgressTimeString) {
+                const firstInProgressDate = new Date(firstInProgressTimeString);
+                const lastDoneDate = new Date(lastDoneTimeString);
+                const cycleTime = (lastDoneDate.getTime() - firstInProgressDate.getTime()) / 1000 / 60 / 60;
+
+                issueStats[key] = {
+                    ...issueStats[key],
+                    cycleTime,
+                }
+
+            }
+        }
+
+        if (firstInProgressTimeString) {
+            const now = new Date().getTime();
+            const inProgressTime = (now - new Date(firstInProgressTimeString).getTime()) / 1000 / 60 / 60;
+
+            issueStats[key] = {
+                ...issueStats[key],
+                inProgressTime,
+            }
+        }
+
+        if (storyPointsField) {
+            const storyPoints = issue.issueDetail.fields[storyPointsField];
+            issueStats[key] = {
+                ...issueStats[key],
+                storyPoints,
+            }
+        }
+
+        // find out if issue was added mid-sprint
+        // if (sprintStartDate) {
+        //     const sprintFieldHistories = changelog.histories?.filter((history) => history.items?.some((item) => item.field === "Sprint"));
+        //     const sprintFieldHistoryCreatedDatesStrings = sprintFieldHistories?.map((history) => history.created ?? '');
+        //     const sprintFieldHistoryCreatedDates = sprintFieldHistoryCreatedDatesStrings?.map((dateString) => new Date(dateString).getTime());
+        //
+        //     sprintFieldHistoryCreatedDates?.sort((a, b) => a - b);
+        //
+        //     // Find latest sprint modification
+        //     const latestSprintModification = sprintFieldHistoryCreatedDates?.[sprintFieldHistoryCreatedDates.length - 1];
+        //
+        //     if (latestSprintModification
+        //         && latestSprintModification > sprintStartDate.getTime()) {
+        //         aggregatedStats.pointsAddedMidSprint += issueStats[key].storyPoints ?? 0;
+        //     }
+        // }
+
+    }
+
+    const sumReducer = (a?: number, b?: number) => ((a ?? 0) + (b ?? 0));
+
+    // Compute aggregated stats
+    const completedPoints = Object.values(issueStats)
+        .filter((issue) => issue.status === "Done")
+        .map((issue) => issue.storyPoints)
+        .reduce(sumReducer, 0) ?? 0;
+    const pointsToDo = Object.values(issueStats)
+        .filter((issue) => issue.status === "To Do")
+        .map((issue) => issue.storyPoints)
+        .reduce(sumReducer, 0) ?? 0;
+    const pointsInProgress = Object.values(issueStats)
+        .filter((issue) => issue.status === "In Progress")
+        .map((issue) => issue.storyPoints)
+        .reduce(sumReducer, 0) ?? 0;
+    const allCycleTimes = Object.values(issueStats)
+        .map((issue) => issue.cycleTime)
+        .filter(cycleTime => cycleTime);
+
+
+    const averageCycleTime = (allCycleTimes.reduce(sumReducer, 0) ?? 0) / allCycleTimes.length;
+
+    aggregatedStats.completedPoints = completedPoints;
+    aggregatedStats.pointsToDo = pointsToDo;
+    aggregatedStats.pointsInProgress = pointsInProgress;
+    aggregatedStats.averageCycleTime = averageCycleTime;
+
+    console.log("Aggregated stats", aggregatedStats);
+
+    return {
+        issueStats,
+        aggregatedStats,
+    }
 }
