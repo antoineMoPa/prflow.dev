@@ -36,7 +36,8 @@ export const generateTeamStatsSlackMessage = async ({
     team: Team;
 }): Promise<string[]> => {
 
-    const { stats, teamMembers } = await getTeamStats({ team });
+    const { githubStats, jiraStats } = await getTeamStats({ team });
+    const { stats, teamMembers } = githubStats;
     const goals = {
         avgTimeToFirstReview: {
             value: 1,
@@ -56,7 +57,7 @@ export const generateTeamStatsSlackMessage = async ({
         },
     }
 
-    const message = [];
+    const message: string[] = [];
 
     message.push(`:chart_with_upwards_trend: *Pull Request flow digest - ${team.name}* :chart_with_upwards_trend:`);
 
@@ -100,7 +101,21 @@ export const generateTeamStatsSlackMessage = async ({
         ));
     }
 
-    message.push(`\n\More details:\nhttps://prflow.dev/team/${team.id}/dashboard`);
+    if (jiraStats) {
+        message.push("\n\n*JIRA Stats*");
+        message.push(`:white_check_mark: *Completed Story Points*: ${jiraStats?.aggregatedStats?.completedPoints}`);
+
+        const totalLeft = (jiraStats?.aggregatedStats?.pointsToDo ?? 0) + (jiraStats?.aggregatedStats?.pointsInProgress ?? 0);
+        message.push(`:construction: *Story Points remaining*: ${totalLeft}`);
+
+        message.push(`:heavy_plus_sign: *Story Points added during sprint*: ${jiraStats?.aggregatedStats?.pointsAddedMidSprint}`);
+
+        message.push(`:hourglass: *Task Cycle Time*: ${displayDuration(jiraStats?.aggregatedStats?.averageCycleTime ?? 0)}`);
+
+
+        message.push(`\n\n\More details:\nhttps://prflow.dev/team/${team.id}/dashboard`);
+    }
+
     return message;
 };
 

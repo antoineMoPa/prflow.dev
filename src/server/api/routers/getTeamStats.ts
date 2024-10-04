@@ -188,7 +188,10 @@ export const getTeamStats = async ({
     team,
 }: {
     team: Team,
-}) => {
+}): Promise<{
+    githubStats: GetGithubTeamStats,
+    jiraStats?: GetJiraTeamStats
+}> => {
     const teamMembers = (await db.teamMember.findMany({
         where: {
             teamId: team.id,
@@ -247,27 +250,35 @@ export const getTeamStats = async ({
         },
     }))?.value;
 
-    let stats = await getGithubTeamStats({
+    const stats = await getGithubTeamStats({
         githubToken,
         teamMembers,
         githubRepositories,
     });
 
+    let jiraStats: GetJiraTeamStats | undefined = undefined;
+
     if (jiraToken && jiraDomain && jiraBoardId && jiraProjectId && jiraUserEmail) {
-        stats = {
-            ...stats,
-            ...await getJiraTeamStats({
-                jiraToken,
-                jiraDomain,
-                jiraProjectId,
-                jiraUserEmail,
-            }),
-        }
+        jiraStats = await getJiraTeamStats({
+            jiraToken,
+            jiraDomain,
+            jiraProjectId,
+            jiraBoardId,
+            jiraUserEmail,
+        })
     }
 
-    return stats;
+    return {
+        githubStats: stats,
+        jiraStats,
+    };
 };
 
+type GetGithubTeamStats = {
+    stats: StatsPerRepository,
+    teamMembers: string[],
+    githubRepositories: string[],
+};
 
 export const getGithubTeamStats = async ({
     githubToken,
@@ -277,7 +288,7 @@ export const getGithubTeamStats = async ({
     githubToken: string,
     teamMembers: string[],
     githubRepositories: string[],
-}) => {
+}): Promise<GetGithubTeamStats> => {
     const octokit = new Octokit({
         auth: githubToken,
     });
@@ -580,23 +591,26 @@ type AggregatedIssueStats = {
     pointsToDo: number,
     pointsInProgress: number,
     pointsAddedMidSprint: number,
+    issuesAddedMidSprint: { key: string, points: number, link: string }[],
     averageCycleTime: number, // hours
 }
 
 type GetJiraTeamStats = {
-    issueStats: Record<string, IssueStats>,
-    aggregatedStats: AggregatedIssueStats,
+    issueStats?: Record<string, IssueStats>,
+    aggregatedStats?: AggregatedIssueStats,
 }
 
 export const getJiraTeamStats = async ({
     jiraToken,
     jiraDomain,
     jiraProjectId,
+    jiraBoardId,
     jiraUserEmail,
 }: {
     jiraToken: string,
     jiraDomain: string,
     jiraProjectId: string,
+    jiraBoardId: string,
     jiraUserEmail: string,
 }): Promise<GetJiraTeamStats> => {
     const client = new Version3Client({
@@ -608,23 +622,23 @@ export const getJiraTeamStats = async ({
             },
         },
     });
+    const agileClient = new AgileClient({
+        host: jiraDomain,
+        authentication: {
+            basic: {
+                email: jiraUserEmail,
+                apiToken: jiraToken
+            },
+        },
+    });
 
-    //const agileClient = new AgileClient({
-    //    host: jiraDomain,
-    //    authentication: {
-    //        basic: {
-    //            email: jiraUserEmail,
-    //            apiToken: jiraToken
-    //        },
-    //    },
-    //});
-    //
-    //const sprints = await agileClient.board.getAllSprints({
-    //    boardId: parseInt(jiraProjectId),
-    //    state: "active",
-    //});
-    //const currentSprint = sprints.values?.[0];
-    //const sprintStartDate: Date | null = currentSprint?.startDate ? new Date(currentSprint?.startDate): null;
+    const sprints = await agileClient.board.getAllSprints({
+        boardId: parseInt(jiraBoardId),
+        state: "active",
+    });
+
+    const currentSprint = sprints.values?.[0];
+    const sprintStartDate: Date | null = currentSprint?.startDate ? new Date(currentSprint?.startDate): null;
 
     const issues = await client.issueSearch.searchForIssuesUsingJql({
         jql: `sprint in openSprints() AND project="${jiraProjectId}"`,
@@ -706,6 +720,7 @@ export const getJiraTeamStats = async ({
         pointsInProgress: 0,
         pointsAddedMidSprint: 0,
         averageCycleTime: 0,
+        issuesAddedMidSprint: [],
     };
 
     const issueStats: Record<string, IssueStats> = {};
@@ -771,22 +786,27 @@ export const getJiraTeamStats = async ({
         }
 
         // find out if issue was added mid-sprint
-        // if (sprintStartDate) {
-        //     const sprintFieldHistories = changelog.histories?.filter((history) => history.items?.some((item) => item.field === "Sprint"));
-        //     const sprintFieldHistoryCreatedDatesStrings = sprintFieldHistories?.map((history) => history.created ?? '');
-        //     const sprintFieldHistoryCreatedDates = sprintFieldHistoryCreatedDatesStrings?.map((dateString) => new Date(dateString).getTime());
-        //
-        //     sprintFieldHistoryCreatedDates?.sort((a, b) => a - b);
-        //
-        //     // Find latest sprint modification
-        //     const latestSprintModification = sprintFieldHistoryCreatedDates?.[sprintFieldHistoryCreatedDates.length - 1];
-        //
-        //     if (latestSprintModification
-        //         && latestSprintModification > sprintStartDate.getTime()) {
-        //         aggregatedStats.pointsAddedMidSprint += issueStats[key].storyPoints ?? 0;
-        //     }
-        // }
+        if (sprintStartDate) {
+            const sprintFieldHistories = changelog.histories?.filter((history) => history.items?.some((item) => item.field === "Sprint"));
+            const sprintFieldHistoryCreatedDatesStrings = sprintFieldHistories?.map((history) => history.created ?? '');
+            const sprintFieldHistoryCreatedDates = sprintFieldHistoryCreatedDatesStrings?.map((dateString) => new Date(dateString).getTime());
 
+            sprintFieldHistoryCreatedDates?.sort((a, b) => a - b);
+
+            // Find latest sprint modification
+            const latestSprintModification = sprintFieldHistoryCreatedDates?.[sprintFieldHistoryCreatedDates.length - 1];
+
+            if (latestSprintModification
+                && latestSprintModification > sprintStartDate.getTime()) {
+                aggregatedStats.pointsAddedMidSprint += issueStats[key].storyPoints ?? 0;
+            }
+
+            aggregatedStats.issuesAddedMidSprint.push({
+                key: issue.issueDetail.key,
+                points: issueStats[key].storyPoints ?? 0,
+                link: `${jiraDomain}/browse/${issue.issueDetail.key}`,
+            });
+        }
     }
 
     const sumReducer = (a?: number, b?: number) => ((a ?? 0) + (b ?? 0));
@@ -815,8 +835,6 @@ export const getJiraTeamStats = async ({
     aggregatedStats.pointsToDo = pointsToDo;
     aggregatedStats.pointsInProgress = pointsInProgress;
     aggregatedStats.averageCycleTime = averageCycleTime;
-
-    console.log("Aggregated stats", aggregatedStats);
 
     return {
         issueStats,

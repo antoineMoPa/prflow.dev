@@ -46,7 +46,8 @@ export const teamDashboardRouter = createTRPCRouter({
                 throw new Error("Team not found");
             }
 
-            const { stats, teamMembers, githubRepositories } = await getTeamStats({ team });
+            const { githubStats } = await getTeamStats({ team });
+            const { stats, teamMembers, githubRepositories } = githubStats;
 
             return {
                 team,
