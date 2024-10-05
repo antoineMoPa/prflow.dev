@@ -268,6 +268,7 @@ function SlackReportTest() {
             </div>
             <h2 className="my-2 mt-4">Slack Message Preview</h2>
             <p>This is the content we send to slack.</p>
+            <p>The ai-generated comment will vary.</p>
             <pre className="bg-white p-2 rounded-md border-solid border-2 border-indigo-900 text-black">
                 {exampleSlackMessage?.join("\n")}
             </pre>

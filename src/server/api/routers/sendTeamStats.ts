@@ -1,5 +1,7 @@
 import { Team,  } from "@prisma/client";
 import { getTeamStats } from "./getTeamStats";
+import { env } from "../../../env";
+import { OpenAI } from "openai";
 
 const displayDuration = (hours: number) => {
     // if under one hour, show minutes count
@@ -29,6 +31,31 @@ const displayStat = (
 
     return `${statMessage} - ${goalMessage} - ${progressMessage}`;
 }
+
+export const generateAIComment = async ({
+    stats
+}: {
+    stats: any
+}) => {
+    const api_key = env.OPENAI_API_KEY;
+    const client = new OpenAI({
+        apiKey: api_key,
+    });
+    const model = "gpt-4o";
+    const prompt = "Given a statistics JSON, you post a 1-2 sentence summary of how the team's tickets pull requests are flowing along with any notable changes. The AI will generate a comment that you can post in the team's Slack channel. Please mention if any pull request was an outliler and skewed statistics. If notable, please discuss points added mid-sprint, completion rate, cycle time. Provide positive reinforcement if the team is doing well. If the team is not doing well, provide constructive feedback. Make sure to add newlines for readability, but don't try to add links or emojis. Keep the message short and impactful.";
+    const chatCompletion = await client.chat.completions.create({
+        model,
+        messages: [{
+            role: 'system',
+            content: prompt
+        }, {
+            role: 'user',
+            content: JSON.stringify(stats)
+        }],
+    });
+
+    return chatCompletion.choices[0]?.message.content;
+};
 
 export const generateTeamStatsSlackMessage = async ({
     team,
@@ -112,8 +139,15 @@ export const generateTeamStatsSlackMessage = async ({
 
         message.push(`:hourglass: *Task Cycle Time*: ${displayDuration(jiraStats?.aggregatedStats?.averageCycleTime ?? 0)}`);
 
+    }
 
+    // Let's wrap open ai part in try/catch in case we run out of credits.
+    try {
+        const aiComment = await generateAIComment({ stats: { githubStats, jiraStats }});
+        message.push(`\n\n:robot_face: ${aiComment}`);
         message.push(`\n\n\More details:\nhttps://prflow.dev/team/${team.id}/dashboard`);
+    } catch (e) {
+        console.error("Failed to generate AI comment", e);
     }
 
     return message;

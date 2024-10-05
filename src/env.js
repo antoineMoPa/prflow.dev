@@ -31,6 +31,7 @@ export const env = createEnv({
             ? z.string()
             : z.string().optional(),
         TEST_GITHUB_TOKEN: z.string().optional(),
+        OPENAI_API_KEY: z.string().optional(),
     },
 
     /**
