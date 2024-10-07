@@ -12,7 +12,7 @@ export default async function Home() {
                         Measure & <span className="text-[hsl(280,100%,70%)]">improve</span> team workflows
                     </h1>
                     <p className="text-2xl text-center">
-                        prflow.dev sends slack reports to your team's channel. We integrate with JIRA and github's API to provide team statistics.
+                        prflow.dev sends slack reports to your team&apos;s channel. We integrate with JIRA and github&apos;s API to provide team statistics.
                     </p>
                     <div className="w-3/4 text-center">
                         <img src="slack_screenshot.png"
@@ -74,7 +74,7 @@ export default async function Home() {
                             </h3>
                             <ul className="list-disc list-inside">
                                 <li>
-                                    We generate a sprint summary using GPT-4o<br/> to help you understand your team's performance.
+                                    We generate a sprint summary using GPT-4o<br/> to help you understand your team&apos;s performance.
                                 </li>
                             </ul>
                         </div>
@@ -97,7 +97,7 @@ export default async function Home() {
             <section className="bg-gradient-to-b from-[#15162c] to-[#2e026d] text-white">
                 <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16">
                     <p className="font-extrabold tracking-tight text-lg text-center">
-                        Get insights into your team's workflow and improve your team's productivity with data-driven decisions.
+                        Get insights into your team&apos;s workflow and improve your team&apos;s productivity with data-driven decisions.
                     </p>
                 </div>
             </section>
@@ -109,7 +109,7 @@ export default async function Home() {
                     </h2>
 
                     <p className="text-2xl text-center">
-                        We will show you how to integrate prflow.dev with your team's slack channel and provide you with a demo of the features.
+                        We will show you how to integrate prflow.dev with your team&apos;s slack channel and provide you with a demo of the features.
                     </p>
                     <div className="flex flex-col items-center justify-center gap-4">
                         <Button
