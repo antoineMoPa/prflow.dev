@@ -344,4 +344,50 @@ export const teamRouter = createTRPCRouter({
                 },
             });
         }),
+
+    getSlackDaysOfWeek: protectedProcedure
+        .input(z.object({ teamId: z.number() }))
+        .query(async ({ ctx, input }) => {
+            const currentUserId: string = ctx.session.user.id;
+
+            const team: Team | null = await ctx.db.team.findFirst({
+                where: {
+                    teamLead: { id: currentUserId },
+                    id: input.teamId,
+                },
+            });
+
+            if (!team) {
+                throw new Error("Team not found");
+            }
+
+            return team.slackDaysOfWeek;
+        }),
+
+    setSlackDaysOfWeek: protectedProcedure
+        .input(z.object({ teamId: z.number() }))
+        .input(z.object({ slackDaysOfWeek: z.string() }))
+        .mutation(async ({ ctx, input }) => {
+            const currentUserId: string = ctx.session.user.id;
+
+            const team: Team | null = await ctx.db.team.findFirst({
+                where: {
+                    teamLead: { id: currentUserId },
+                    id: input.teamId,
+                },
+            });
+
+            if (!team) {
+                throw new Error("Team not found");
+            }
+
+            return ctx.db.team.update({
+                where: {
+                    id: input.teamId,
+                },
+                data: {
+                    slackDaysOfWeek: input.slackDaysOfWeek,
+                },
+            });
+        }),
 });

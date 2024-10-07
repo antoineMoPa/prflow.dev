@@ -4,8 +4,8 @@ import { useRouter } from 'next/router';
 import Layout from '~/app/_components/Layout';
 import { api } from '../../../trpc/react';
 import { useSession } from 'next-auth/react';
-import { Button, Input, Select, SelectItem } from '@nextui-org/react';
-import React from 'react';
+import { Button, Checkbox, Input, Select, SelectItem } from '@nextui-org/react';
+import React, { useCallback, useEffect } from 'react';
 import { FaRegTrashCan } from 'react-icons/fa6';
 import Link from 'next/link';
 
@@ -235,6 +235,149 @@ function AuthTokens() {
     );
 }
 
+function SlackDaysOfWeekEditor() {
+    const router = useRouter();
+    const teamId = parseInt(router.query.teamId as string);
+    const { data: dbSlackDaysOfWeek, refetch } = api.team.getSlackDaysOfWeek.useQuery({ teamId });
+
+    const utils = api.useUtils();
+
+    console.log("dbSlackDaysOfWeek", dbSlackDaysOfWeek);
+
+    const [monday, setMonday] = React.useState(dbSlackDaysOfWeek?.includes("1"));
+    const [tuesday, setTuesday] = React.useState(dbSlackDaysOfWeek?.includes("2"));
+    const [wednesday, setWednesday] = React.useState(dbSlackDaysOfWeek?.includes("3"));
+    const [thursday, setThursday] = React.useState(dbSlackDaysOfWeek?.includes("4"));
+    const [friday, setFriday] = React.useState(dbSlackDaysOfWeek?.includes("5"));
+    const [saturday, setSaturday] = React.useState(dbSlackDaysOfWeek?.includes("6"));
+    const [sunday, setSunday] = React.useState(dbSlackDaysOfWeek?.includes("0"));
+
+    useEffect(() => {
+        setMonday(dbSlackDaysOfWeek?.includes("1"));
+        setTuesday(dbSlackDaysOfWeek?.includes("2"));
+        setWednesday(dbSlackDaysOfWeek?.includes("3"));
+        setThursday(dbSlackDaysOfWeek?.includes("4"));
+        setFriday(dbSlackDaysOfWeek?.includes("5"));
+        setSaturday(dbSlackDaysOfWeek?.includes("6"));
+        setSunday(dbSlackDaysOfWeek?.includes("0"));
+    }, [dbSlackDaysOfWeek]);
+
+    console.log(monday, tuesday, wednesday, thursday, friday, saturday, sunday);
+
+    const updateSlackDaysOfWeek = api.team.setSlackDaysOfWeek.useMutation({
+        onSuccess: async () => {
+            await utils.team.invalidate();
+            await refetch();
+        },
+    });
+
+    const onSubmit = useCallback(() => {
+        const daysOfWeek = [
+            monday ? "1" : "",
+            tuesday ? "2" : "",
+            wednesday ? "3" : "",
+            thursday ? "4" : "",
+            friday ? "5" : "",
+            saturday ? "6" : "",
+            sunday ? "0" : "",
+        ].filter((day) => day !== "").join(",");
+
+        updateSlackDaysOfWeek.mutate({ teamId, slackDaysOfWeek: daysOfWeek });
+    }, [monday, tuesday, wednesday, thursday, friday, saturday, sunday]);
+
+    return (
+        <div className="p-5 m-5 rounded-md border-solid border-2 border-indigo-900 w-3/4 m-auto">
+            <h2 className="text-xl">Slack Days of Week</h2>
+            <p className="text-md">
+                This is the days of the week that the slack report will be sent.
+            </p>
+            <form
+                onSubmit={(e) => {
+                    e.preventDefault();
+                    onSubmit();
+                }}
+                className="my-5"
+            >
+                <div className="flex">
+                    <Checkbox
+                        isSelected={monday}
+                        onChange={(e) => setMonday(e.target.checked)}
+                    >
+                        <span className="text-white">
+                            Monday, {monday}
+                        </span>
+                    </Checkbox>
+                    <Checkbox
+                        isSelected={tuesday}
+                        onChange={(e) => setTuesday(e.target.checked)}
+                        className="ml-5"
+                    >
+                        <span className="text-white">
+                            Tuesday
+                        </span>
+                    </Checkbox>
+                    <Checkbox
+                        isSelected={wednesday}
+                        onChange={(e) => setWednesday(e.target.checked)}
+                        className="ml-5"
+                    >
+                        <span className="text-white">
+                            Wednesday, {wednesday}
+                        </span>
+                    </Checkbox>
+                    <Checkbox
+                        isSelected={thursday}
+                        onChange={(e) => setThursday(e.target.checked)}
+                        className="ml-5"
+                    >
+                        <span className="text-white">
+                            Thursday
+                        </span>
+                    </Checkbox>
+                    <Checkbox
+                        isSelected={friday}
+                        onChange={(e) => setFriday(e.target.checked)}
+                        className="ml-5"
+                    >
+                        <span className="text-white">
+                            Friday
+                        </span>
+                    </Checkbox>
+                    <Checkbox
+                        isSelected={saturday}
+                        onChange={(e) => setSaturday(e.target.checked)}
+                        className="ml-5"
+                    >
+                        <span className="text-white">
+                            Saturday
+                        </span>
+                    </Checkbox>
+                    <Checkbox
+                        isSelected={sunday}
+                        onChange={(e) => setSunday(e.target.checked)}
+                        className="ml-5"
+                    >
+                        <span className="text-white">
+                            Sunday
+                        </span>
+                    </Checkbox>
+                </div>
+                <div>
+                    <div className="flex">
+                        <Button
+                            type="submit"
+                            className="px-10 py-7 mt-5"
+                            disabled={updateSlackDaysOfWeek.isPending}
+                        >
+                            {updateSlackDaysOfWeek.isPending ? "Submitting..." : "Update"}
+                        </Button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    );
+}
+
 function SlackReportTest() {
     const router = useRouter();
     const teamId = parseInt(router.query.teamId as string);
@@ -390,6 +533,7 @@ function TeamEditorSuspense() {
             <div className="my-10"></div>
             <AuthTokens/>
             <div className="my-10"></div>
+            <SlackDaysOfWeekEditor/>
             <div className="p-5 m-5 rounded-md border-solid border-2 border-indigo-900">
                 <h2 className="text-xl">Slack Report Test</h2>
                 <SlackReportTest/>
