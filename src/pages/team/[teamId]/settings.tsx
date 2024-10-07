@@ -242,8 +242,6 @@ function SlackDaysOfWeekEditor() {
 
     const utils = api.useUtils();
 
-    console.log("dbSlackDaysOfWeek", dbSlackDaysOfWeek);
-
     const [monday, setMonday] = React.useState(dbSlackDaysOfWeek?.includes("1"));
     const [tuesday, setTuesday] = React.useState(dbSlackDaysOfWeek?.includes("2"));
     const [wednesday, setWednesday] = React.useState(dbSlackDaysOfWeek?.includes("3"));
@@ -261,8 +259,6 @@ function SlackDaysOfWeekEditor() {
         setSaturday(dbSlackDaysOfWeek?.includes("6"));
         setSunday(dbSlackDaysOfWeek?.includes("0"));
     }, [dbSlackDaysOfWeek]);
-
-    console.log(monday, tuesday, wednesday, thursday, friday, saturday, sunday);
 
     const updateSlackDaysOfWeek = api.team.setSlackDaysOfWeek.useMutation({
         onSuccess: async () => {
