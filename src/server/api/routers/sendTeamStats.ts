@@ -139,6 +139,15 @@ export const generateTeamStatsSlackMessage = async ({
 
         message.push(`:hourglass: *Task Cycle Time*: ${displayDuration(jiraStats?.aggregatedStats?.averageCycleTime ?? 0)}`);
 
+        const stats = jiraStats.aggregatedStats;
+        if (stats?.sprintTimePassedRatio) {
+            const sprintTimePassedPercent = ((stats.sprintTimePassedRatio ?? 0) * 100).toFixed(0);
+            const pointsCompletionRate = (stats.pointsCompletionRate * 100).toFixed(0);
+            const isBehindSchedule = stats.pointsCompletionRate < stats.sprintTimePassedRatio;
+            const completionRateIcon = isBehindSchedule ? ":warning:" : ":white_check_mark:";
+
+            message.push(`:calendar: *Sprint Time Passed*: ${sprintTimePassedPercent}% | *Story Points Completion Rate*: ${pointsCompletionRate}% ${completionRateIcon}`);
+        }
     }
 
     // Let's wrap open ai part in try/catch in case we run out of credits.

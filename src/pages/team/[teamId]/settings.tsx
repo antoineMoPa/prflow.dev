@@ -279,7 +279,7 @@ function SlackDaysOfWeekEditor() {
         ].filter((day) => day !== "").join(",");
 
         updateSlackDaysOfWeek.mutate({ teamId, slackDaysOfWeek: daysOfWeek });
-    }, [monday, tuesday, wednesday, thursday, friday, saturday, sunday]);
+    }, [monday, tuesday, wednesday, thursday, friday, saturday, sunday, updateSlackDaysOfWeek, teamId]);
 
     return (
         <div className="p-5 m-5 rounded-md border-solid border-2 border-indigo-900 w-3/4 m-auto">

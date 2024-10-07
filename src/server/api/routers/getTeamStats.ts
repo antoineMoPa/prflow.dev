@@ -592,6 +592,8 @@ type AggregatedIssueStats = {
     pointsInProgress: number,
     pointsAddedMidSprint: number,
     issuesAddedMidSprint: { key: string, points: number, link: string }[],
+    sprintTimePassedRatio: number | null,
+    pointsCompletionRate: number,
     averageCycleTime: number, // hours
 }
 
@@ -639,6 +641,13 @@ export const getJiraTeamStats = async ({
 
     const currentSprint = sprints.values?.[0];
     const sprintStartDate: Date | null = currentSprint?.startDate ? new Date(currentSprint?.startDate): null;
+    const sprintEndDate: Date | null = currentSprint?.endDate ? new Date(currentSprint?.endDate): null;
+
+    let sprintTimePassedRatio = null;
+
+    if (sprintStartDate && sprintEndDate) {
+        sprintTimePassedRatio = (new Date().getTime() - sprintStartDate.getTime()) / (sprintEndDate.getTime() - sprintStartDate.getTime());
+    }
 
     const issues = await client.issueSearch.searchForIssuesUsingJql({
         jql: `sprint in openSprints() AND project="${jiraProjectId}"`,
@@ -720,6 +729,8 @@ export const getJiraTeamStats = async ({
         pointsInProgress: 0,
         pointsAddedMidSprint: 0,
         averageCycleTime: 0,
+        sprintTimePassedRatio,
+        pointsCompletionRate: 0,
         issuesAddedMidSprint: [],
     };
 
@@ -828,6 +839,9 @@ export const getJiraTeamStats = async ({
         .map((issue) => issue.cycleTime)
         .filter(cycleTime => cycleTime);
 
+    const pointsCompletionRate = completedPoints / (pointsToDo + pointsInProgress);
+    aggregatedStats.sprintTimePassedRatio = sprintTimePassedRatio;
+    aggregatedStats.pointsCompletionRate = pointsCompletionRate;
 
     const averageCycleTime = (allCycleTimes.reduce(sumReducer, 0) ?? 0) / allCycleTimes.length;
 
