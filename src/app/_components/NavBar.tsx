@@ -23,6 +23,16 @@ function SessionNavBarContent() {
                             Pricing
                         </Link>
                     </NavbarItem>
+                    <NavbarItem className="mr-3">
+                        <Button
+                            as={Link}
+                            color="success"
+                            className="text-white"
+                            href="https://docs.google.com/forms/d/e/1FAIpQLSfcT2arJ_gFdokI36FtCbuQbJjLVDuOR2XSR47E-OmeaSrMRw/viewform?usp=sf_link"
+                            target="_blank">
+                            Book a Demo
+                        </Button>
+                    </NavbarItem>
                     <NavbarItem>
                         <Button as={Link} color="success" href="/api/auth/signin" variant="flat">
                             Sign In
