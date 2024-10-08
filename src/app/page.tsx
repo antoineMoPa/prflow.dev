@@ -26,7 +26,7 @@ export default async function Home() {
                     <h2 className="text-3xl font-extrabold tracking-tight sm:text-[3rem] text-center">
                         Features
                     </h2>
-                    <div className="grid grid-cols-1 gap-12 sm:grid-cols-3 flex items-start">
+                    <div className="grid grid-cols-1 gap-12 sm:grid-cols-4 flex items-start">
                         <div className="flex flex-col items-center justify-center gap-4">
                             <h3 className="text-2xl font-extrabold tracking-tight sm:text-[2.5rem] text-center">
                                 PR Statistics
