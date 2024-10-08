@@ -8,11 +8,8 @@ export default async function Home() {
             <NavBar/>
             <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c] text-white">
                 <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16">
-                    <h1 className="text-5xl font-extrabold tracking-tight sm:text-[5rem] text-center">
-                        Measure & <span className="text-[hsl(280,100%,70%)]">improve</span> team workflows
-                    </h1>
                     <p className="text-2xl text-center">
-                        prflow.dev sends slack reports to your team&apos;s channel. We integrate with JIRA and github&apos;s API to provide team statistics.
+                        Track PR metrics and improve your development team's efficiency with automated Slack reports.
                     </p>
                     <div className="w-3/4 text-center">
                         <img src="slack_screenshot.png"
@@ -22,7 +19,7 @@ export default async function Home() {
                 </div>
             </main>
             <section className="bg-gradient-to-b from-[#15162c] to-[#2e026d] text-white">
-                <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16">
+                <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16 m-auto">
                     <h2 className="text-3xl font-extrabold tracking-tight sm:text-[3rem] text-center">
                         Features
                     </h2>
@@ -95,15 +92,44 @@ export default async function Home() {
                 </div>
             </section>
             <section className="bg-gradient-to-b from-[#15162c] to-[#2e026d] text-white">
-                <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16">
+                <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16 m-auto">
                     <p className="font-extrabold tracking-tight text-lg text-center">
                         Get insights into your team&apos;s workflow and improve your team&apos;s productivity with data-driven decisions.
+                    </p>
+                    <video src="dashboard.webm" autoPlay muted loop className="shadow-lg"/>
+                </div>
+            </section>
+            <section className="bg-gradient-to-b from-[#15162c] to-[#2e026d] text-white">
+                <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16 m-auto">
+                    <p className="font-extrabold tracking-tight text-lg text-center">
+                        Sign in with github and try out today!
+                    </p>
+                    <Button
+                        as={Link}
+                        color="success"
+                        className="text-white text-lg p-8"
+                        href="/api/auth/signin">
+                        Sign in with Github
+                    </Button>
+                </div>
+            </section>
+
+            <section className="bg-gradient-to-b from-[#15162c] to-[#2e026d] text-white">
+                <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16 m-auto">
+                    <p className="font-extrabold tracking-tight text-lg text-center">
+                        Testimonials
+                    </p>
+                    <p className="text-2xl text-center italic">
+                        Getting regular reports in Slack has helped increase our team's pull-request throughput.<br/>Once you measure something, it starts to improve!
+                    </p>
+                    <p className="text-2xl text-center">
+                        - <a href="https://www.linkedin.com/in/antoine-morin-paulhus-33b9465a/" target="_blank" className="text-blue-500">Antoine</a>, <span title="Also, the creator of prflow.dev lol">one of the Team Leads</span> at <a href="https://lumen5.com" target="_blank" className="text-blue-500">Lumen5</a>
                     </p>
                 </div>
             </section>
 
             <section className="bg-gradient-to-b from-[#15162c] to-[#2e026d] text-white">
-                <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16">
+                <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16 m-auto">
                     <h2 className="text-3xl font-extrabold tracking-tight sm:text-[3rem] text-center">
                         Book a demo
                     </h2>
