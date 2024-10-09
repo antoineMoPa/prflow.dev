@@ -8,6 +8,7 @@ import { Button, Checkbox, Input, Select, SelectItem } from '@nextui-org/react';
 import React, { useCallback, useEffect } from 'react';
 import { FaRegTrashCan } from 'react-icons/fa6';
 import Link from 'next/link';
+import { FaRedo } from 'react-icons/fa';
 
 function GithubRepositoriesEditor() {
     const router = useRouter();
@@ -32,6 +33,13 @@ function GithubRepositoriesEditor() {
         },
     });
 
+    const clearGithubRepositoryCache = api.team.clearRepositoryCache.useMutation({
+        onSuccess: async () => {
+            await utils.team.invalidate();
+            await refetch();
+        },
+    });
+
     return (
         <div className="p-5 m-5 rounded-md border-solid border-2 border-indigo-900 w-1/2 m-auto">
             <h2 className="text-xl">Github Repositories</h2>
@@ -42,6 +50,16 @@ function GithubRepositoriesEditor() {
                             <div className="grow self-center">
                                 {githubRepo.path}
                             </div>
+                            <Button
+                                className="ml-2 mt-2"
+                                startContent={<FaRedo/>}
+                                onClick={() => clearGithubRepositoryCache.mutate({
+                                    path: githubRepo.path,
+                                    teamId
+                                })}
+                            >
+                                Clear cache
+                            </Button>
                             <Button
                                 className="ml-2 mt-2"
                                 startContent={<FaRegTrashCan/>}
@@ -131,42 +149,54 @@ function AuthTokens() {
     }, [tokenType]);
 
     return (
-        <div className="p-5 m-5 rounded-md border-solid border-2 border-indigo-900 w-1/2 m-auto">
+        <div className="p-5 m-5 rounded-md border-solid border-2 border-indigo-900 w-3/4 m-auto">
             <h2 className="text-xl">Authentication tokens</h2>
             <p className="text-md">
                 GitHub Instructions
             </p>
             <p>
-                Generate a github authentication token here:&nbsp;
-                <Link
-                    href="https://github.com/settings/tokens"
-                    className="text-blue-500"
-                    target="_blank">
-                    github.com/settings/tokens
-                </Link>
-                <p>Make sure to use a classic token and give repo permissions.</p>
+                <ul className="list-disc ml-5">
+                    <li>
+                        Generate a github authentication token here:&nbsp;
+                        <Link
+                            href="https://github.com/settings/tokens"
+                            className="text-blue-500"
+                            target="_blank">
+                            github.com/settings/tokens
+                        </Link>
+                        <p>Make sure to use a classic token and give repo permissions.</p>
+                        </li>
+                </ul>
             </p>
             <p className="text-md mt-4">
                 Jira Instructions
             </p>
             <p>
-                Your domain should look like this: https://your-domain.atlassian.net<br/>
+                <ul className="list-disc ml-5">
+                    <li>
+                        Your domain should look like this: https://your-domain.atlassian.net
+                    </li>
+                    <li>
+                        You can find your auth token here:&nbsp;
+                        <Link
+                            href="https://id.atlassian.com/manage-profile/security/api-tokens"
+                            className="text-blue-500"
+                            target="_blank">
+                            id.atlassian.com/manage-profile/security/api-tokens
+                        </Link>
 
-                You can find your auth token here:&nbsp;
-                <Link
-                    href="https://id.atlassian.com/manage-profile/security/api-tokens"
-                    className="text-blue-500"
-                    target="_blank">
-                    id.atlassian.com/manage-profile/security/api-tokens
-                </Link>
-                <br/>
-
-                Your board id is a number that can be found in the URL when you are viewing
-                a sprint or backlog in Jira.<br/>
-
-                Your project id what your issues usually start with. (ex: the &quot;MR&quot; in &quot;MR-1234&quot;)<br/>
-
-                Your user email is the email you use to login to Jira. We use it to communicate with JIRA&lsquo;s API, using your API token.
+                    </li>
+                    <li>
+                        Your board id is a number that can be found in the URL when you are viewing
+                        a sprint or backlog in Jira.
+                    </li>
+                    <li>
+                        Your project id what your issues usually start with. (ex: the &quot;MR&quot; in &quot;MR-1234&quot;)
+                    </li>
+                    <li>
+                        Your user email is the email you use to login to Jira. We use it to communicate with JIRA&lsquo;s API, using your API token.
+                    </li>
+                </ul>
             </p>
             <ul className="my-5">
                 {allAuthTokens?.map((authToken)  => {
@@ -415,6 +445,29 @@ function SlackReportTest() {
     );
 }
 
+function SlackReportTestWrapper() {
+    const [showExampleSlackMessage, setShowExampleSlackMessage] = React.useState(false);
+
+    return (
+        <div>
+            {showExampleSlackMessage && (
+                <SlackReportTest/>
+            )}
+            {!showExampleSlackMessage && (
+                <div>
+                    <p>This section is hidden by default as it's slower to process.</p>
+                    <Button
+                        className="mt-2"
+                        onClick={() => setShowExampleSlackMessage(true)}
+                    >
+                        Show Example Slack Message
+                    </Button>
+                </div>
+            )}
+        </div>
+    );
+}
+
 function TeamEditor() {
     const router = useRouter();
     const teamId = parseInt(router.query.teamId as string);
@@ -533,7 +586,7 @@ function TeamEditorSuspense() {
             <SlackDaysOfWeekEditor/>
             <div className="p-5 m-5 rounded-md border-solid border-2 border-indigo-900">
                 <h2 className="text-xl">Slack Report Test</h2>
-                <SlackReportTest/>
+                <SlackReportTestWrapper/>
             </div>
             <div className="my-10"></div>
             <DangerZone/>

@@ -391,4 +391,30 @@ export const teamRouter = createTRPCRouter({
                 },
             });
         }),
+
+    clearRepositoryCache: protectedProcedure
+        .input(z.object({ teamId: z.number() }))
+        .input(z.object({ path: z.string().min(1) }))
+        .mutation(async ({ ctx, input }) => {
+            const currentUserId: string = ctx.session.user.id;
+
+            const team: Team | null = await ctx.db.team.findFirst({
+                where: {
+                    teamLead: { id: currentUserId },
+                    id: input.teamId,
+                },
+            });
+
+            if (!team) {
+                throw new Error("Team not found");
+            }
+
+            await ctx.db.cache.deleteMany({
+                where: {
+                    path: input.path,
+                }
+            });
+
+            return true;
+        }),
 });
