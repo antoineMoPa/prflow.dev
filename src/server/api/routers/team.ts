@@ -50,6 +50,7 @@ export const teamRouter = createTRPCRouter({
                     name: input.name,
                     teamLead: { connect: { id: ctx.session.user.id } },
                     lastSlackDate: new Date().toISOString(),
+                    slackMessageConfig: "{}",
                 },
             });
         }),
