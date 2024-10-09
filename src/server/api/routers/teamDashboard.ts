@@ -5,7 +5,7 @@ import {
     protectedProcedure
 } from "../../../server/api/trpc";
 import { type Team } from "@prisma/client";
-import { getTeamStats } from "./getTeamStats";
+import { getJiraTeamStats, getTeamStats } from "./getTeamStats";
 
 export const teamDashboardRouter = createTRPCRouter({
 
@@ -46,7 +46,7 @@ export const teamDashboardRouter = createTRPCRouter({
                 throw new Error("Team not found");
             }
 
-            const { githubStats } = await getTeamStats({ team });
+            const { githubStats, jiraStats } = await getTeamStats({ team });
             const { stats, teamMembers, githubRepositories } = githubStats;
 
             return {
@@ -54,6 +54,7 @@ export const teamDashboardRouter = createTRPCRouter({
                 teamMembers,
                 githubRepositories,
                 stats,
+                jiraStats,
             };
         }),
 });

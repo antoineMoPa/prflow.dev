@@ -579,14 +579,14 @@ export const getGithubTeamStats = async ({
     };
 };
 
-type IssueStats = {
+export type IssueStats = {
     cycleTime?: number, // hours
     inProgressTime?: number, // hours
     storyPoints?: number, // hours
     status?: string,
 };
 
-type AggregatedIssueStats = {
+export type AggregatedIssueStats = {
     completedPoints: number,
     pointsToDo: number,
     pointsInProgress: number,
@@ -597,7 +597,7 @@ type AggregatedIssueStats = {
     averageCycleTime: number, // hours
 }
 
-type GetJiraTeamStats = {
+export type GetJiraTeamStats = {
     issueStats?: Record<string, IssueStats>,
     aggregatedStats?: AggregatedIssueStats,
 }

@@ -9,7 +9,7 @@ import { Chart as ChartJS, CategoryScale, Title, Tooltip, Legend, ArcElement } f
 
 // Register the necessary components with Chart.js
 ChartJS.register(CategoryScale, Title, Tooltip, Legend, ArcElement);
-import type { RepositoryStats } from '~/server/api/routers/getTeamStats';
+import type { GetJiraTeamStats, RepositoryStats } from '~/server/api/routers/getTeamStats';
 import React from 'react';
 import { FaExternalLinkAlt } from 'react-icons/fa';
 import { Button, Link, Spinner, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from '@nextui-org/react';
@@ -254,6 +254,68 @@ function RepoStats({ stats }: { stats: RepositoryStats }) {
     );
 }
 
+function JiraStats(
+    {
+        jiraStats
+    }: {
+        jiraStats: GetJiraTeamStats
+    }
+) {
+    return (
+        <div className="w-full">
+            <h2 className="text-xl">Jira Stats</h2>
+            <Table className="text-right my-4 w-full">
+                <TableHeader>
+                    <TableColumn className="text-left">Stat</TableColumn>
+                    <TableColumn className="text-right">Value</TableColumn>
+                    <TableColumn className="text-right">Unit</TableColumn>
+                </TableHeader>
+                <TableBody>
+                    <TableRow>
+                        <TableCell className="text-left">Completed Points</TableCell>
+                        <TableCell className="text-right">{jiraStats.aggregatedStats?.completedPoints}</TableCell>
+                        <TableCell className="text-right">points</TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableCell className="text-left">Points To Do</TableCell>
+                        <TableCell className="text-right">{jiraStats.aggregatedStats?.pointsToDo}</TableCell>
+                        <TableCell className="text-right">points</TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableCell className="text-left">Points In Progress</TableCell>
+                        <TableCell className="text-right">{jiraStats.aggregatedStats?.pointsInProgress}</TableCell>
+                        <TableCell className="text-right">points</TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableCell className="text-left">Points Added Mid Sprint</TableCell>
+                        <TableCell className="text-right">{jiraStats.aggregatedStats?.pointsAddedMidSprint}</TableCell>
+                        <TableCell className="text-right">points</TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableCell className="text-left">Issues Added Mid Sprint</TableCell>
+                        <TableCell className="text-right">{jiraStats.aggregatedStats?.issuesAddedMidSprint.length}</TableCell>
+                        <TableCell className="text-right">issues</TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableCell className="text-left">Sprint Time Passed Ratio</TableCell>
+                        <TableCell className="text-right">{jiraStats.aggregatedStats?.sprintTimePassedRatio?.toFixed(2)}</TableCell>
+                        <TableCell className="text-right">ratio</TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableCell className="text-left">Points Completion Rate</TableCell>
+                        <TableCell className="text-right">{jiraStats.aggregatedStats?.pointsCompletionRate.toFixed(2)}</TableCell>
+                        <TableCell className="text-right">ratio</TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableCell className="text-left">Average Cycle Time</TableCell>
+                        <TableCell className="text-right">{jiraStats.aggregatedStats?.averageCycleTime.toFixed(2)}</TableCell>
+                        <TableCell className="text-right">hours</TableCell>
+                    </TableRow>
+                </TableBody>
+            </Table>
+        </div>);
+}
+
 function TeamDashboard() {
     const router = useRouter();
     const teamId = parseInt(router.query.teamId as string);
@@ -305,6 +367,9 @@ function TeamDashboard() {
                         );
                     })}
                 </ul>
+            </div>
+            <div className="flex p-5 m-5 rounded-md border-solid border-2 border-indigo-900 text-slate-700 bg-white">
+                { stats?.jiraStats && <JiraStats jiraStats={stats?.jiraStats}/>}
             </div>
             {stats?.githubRepositories?.map((repo) => {
                 return (
