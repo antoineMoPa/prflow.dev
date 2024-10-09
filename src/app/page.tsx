@@ -9,7 +9,7 @@ export default async function Home() {
             <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c] text-white">
                 <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16">
                     <p className="text-2xl text-center">
-                        Track PR metrics and improve your development team's efficiency with automated Slack reports.
+                        Track PR metrics and improve your development team&apos;s efficiency with automated Slack reports.
                     </p>
                     <div className="w-3/4 text-center">
                         <img src="slack_screenshot.png"
@@ -120,7 +120,7 @@ export default async function Home() {
                         Testimonials
                     </p>
                     <p className="text-2xl text-center italic">
-                        Getting regular reports in Slack has helped increase our team's pull-request throughput.<br/>Once you measure something, it starts to improve!
+                        Getting regular reports in Slack has helped increase our team&apos;s pull-request throughput.<br/>Once you measure something, it starts to improve!
                     </p>
                     <p className="text-2xl text-center">
                         - <a href="https://www.linkedin.com/in/antoine-morin-paulhus-33b9465a/" target="_blank" className="text-blue-500">Antoine</a>, <span title="Also, the creator of prflow.dev lol">one of the Team Leads</span> at <a href="https://lumen5.com" target="_blank" className="text-blue-500">Lumen5</a>

@@ -455,7 +455,7 @@ function SlackReportTestWrapper() {
             )}
             {!showExampleSlackMessage && (
                 <div>
-                    <p>This section is hidden by default as it's slower to process.</p>
+                    <p>This section is hidden by default as it&apos;s slower to process.</p>
                     <Button
                         className="mt-2"
                         onClick={() => setShowExampleSlackMessage(true)}
