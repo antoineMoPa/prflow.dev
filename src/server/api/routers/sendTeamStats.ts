@@ -62,6 +62,17 @@ export const generateTeamStatsSlackMessage = async ({
 } : {
     team: Team;
 }): Promise<string[]> => {
+    const {
+        showAverageTimeToFirstReview,
+        showMedianTimeToFirstReview,
+        showAverageCycleTime,
+        showTeamThroughput,
+        showCompletedStoryPoints,
+        showStoryPointsRemaining,
+        showStoryPointsAddedDuringSprint,
+        showTaskCycleTime,
+        showStoryPointsCompletionRate,
+    } = JSON.parse(team.slackMessageConfig ?? "{}");
 
     const { githubStats, jiraStats } = await getTeamStats({ team });
     const { stats, teamMembers } = githubStats;
@@ -91,53 +102,62 @@ export const generateTeamStatsSlackMessage = async ({
     for (const [repoName, repoStats] of Object.entries(stats)) {
         message.push(`\n*${repoName}*`);
 
-        message.push(displayStat(
-            repoStats.weeklyStats.avgTimeToFirstReview,
-            repoStats.weeklyStats.previousWeekAvgTimeToFirstReview,
-            "Average Time to First Review",
-            displayDuration,
-            { goal: goals.avgTimeToFirstReview },
-        ));
+        (showAverageTimeToFirstReview ?? true) &&
+            message.push(displayStat(
+                repoStats.weeklyStats.avgTimeToFirstReview,
+                repoStats.weeklyStats.previousWeekAvgTimeToFirstReview,
+                "Average Time to First Review",
+                displayDuration,
+                { goal: goals.avgTimeToFirstReview },
+            ));
 
-        message.push(displayStat(
-            repoStats.weeklyStats.medianTimeToFirstReview ?? 0,
-            repoStats.weeklyStats.previousWeekMedianTimeToFirstReview ?? 0,
-            "Median Time to First Review",
-            displayDuration,
-            { goal: goals.medianTimeToFirstReview },
-        ));
+        (showMedianTimeToFirstReview ?? true) &&
+            message.push(displayStat(
+                repoStats.weeklyStats.medianTimeToFirstReview ?? 0,
+                repoStats.weeklyStats.previousWeekMedianTimeToFirstReview ?? 0,
+                "Median Time to First Review",
+                displayDuration,
+                { goal: goals.medianTimeToFirstReview },
+            ));
 
-        message.push(displayStat(
-            repoStats.weeklyStats.avgPullRequestCycleTime,
-            repoStats.weeklyStats.previousWeekAvgPullRequestCycleTime,
-            "Average Cycle Time",
-            displayDuration,
-            { goal: goals.avgPullRequestCycleTime },
-        ));
+        (showAverageCycleTime ?? true) &&
+            message.push(displayStat(
+                repoStats.weeklyStats.avgPullRequestCycleTime,
+                repoStats.weeklyStats.previousWeekAvgPullRequestCycleTime,
+                "Average Cycle Time",
+                displayDuration,
+                { goal: goals.avgPullRequestCycleTime },
+            ));
 
         const currentWeekThroughput = repoStats.weeklyStats.throughputPRs;
         const lastWeekThroughput = repoStats.weeklyStats.previousWeekThroughputPRs;
 
         // team throughput
-        message.push(displayStat(
-            currentWeekThroughput,
-            lastWeekThroughput,
-            "Team Throughput",
-            num => `${num.toFixed(1)} PRs/week`,
-            { goal: goals.throughputPRs },
-        ));
+        (showTeamThroughput ?? true) &&
+            message.push(displayStat(
+                currentWeekThroughput,
+                lastWeekThroughput,
+                "Team Throughput",
+                num => `${num.toFixed(1)} PRs/week`,
+                { goal: goals.throughputPRs },
+            ));
     }
 
     if (jiraStats) {
         message.push("\n\n*JIRA Stats*");
-        message.push(`:white_check_mark: *Completed Story Points*: ${jiraStats?.aggregatedStats?.completedPoints}`);
+        (showCompletedStoryPoints ?? true) &&
+            message.push(`:white_check_mark: *Completed Story Points*: ${jiraStats?.aggregatedStats?.completedPoints}`);
 
         const totalLeft = (jiraStats?.aggregatedStats?.pointsToDo ?? 0) + (jiraStats?.aggregatedStats?.pointsInProgress ?? 0);
-        message.push(`:construction: *Story Points remaining*: ${totalLeft}`);
 
-        message.push(`:heavy_plus_sign: *Story Points added during sprint*: ${jiraStats?.aggregatedStats?.pointsAddedMidSprint}`);
+        (showStoryPointsRemaining ?? true) &&
+            message.push(`:construction: *Story Points remaining*: ${totalLeft}`);
 
-        message.push(`:hourglass: *Task Cycle Time*: ${displayDuration(jiraStats?.aggregatedStats?.averageCycleTime ?? 0)}`);
+        (showStoryPointsAddedDuringSprint ?? true) &&
+            message.push(`:heavy_plus_sign: *Story Points added during sprint*: ${jiraStats?.aggregatedStats?.pointsAddedMidSprint}`);
+
+        (showTaskCycleTime ?? true) &&
+            message.push(`:hourglass: *Task Cycle Time*: ${displayDuration(jiraStats?.aggregatedStats?.averageCycleTime ?? 0)}`);
 
         const stats = jiraStats.aggregatedStats;
         if (stats?.sprintTimePassedRatio) {
@@ -146,7 +166,8 @@ export const generateTeamStatsSlackMessage = async ({
             const isBehindSchedule = stats.pointsCompletionRate < stats.sprintTimePassedRatio;
             const completionRateIcon = isBehindSchedule ? ":warning:" : ":white_check_mark:";
 
-            message.push(`:calendar: *Sprint Time Passed*: ${sprintTimePassedPercent}% | *Story Points Completion Rate*: ${pointsCompletionRate}% ${completionRateIcon}`);
+            (showStoryPointsCompletionRate ?? true) &&
+                message.push(`:calendar: *Sprint Time Passed*: ${sprintTimePassedPercent}% | *Story Points Completion Rate*: ${pointsCompletionRate}% ${completionRateIcon}`);
         }
     }
 

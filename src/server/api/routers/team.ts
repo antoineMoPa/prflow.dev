@@ -392,6 +392,52 @@ export const teamRouter = createTRPCRouter({
             });
         }),
 
+    getSlackMessageConfig: protectedProcedure
+        .input(z.object({ teamId: z.number() }))
+        .query(async ({ ctx, input }) => {
+            const currentUserId: string = ctx.session.user.id;
+
+            const team: Team | null = await ctx.db.team.findFirst({
+                where: {
+                    teamLead: { id: currentUserId },
+                    id: input.teamId,
+                },
+            });
+
+            if (!team) {
+                throw new Error("Team not found");
+            }
+
+            return team.slackMessageConfig;
+        }),
+
+    setSlackMessageConfig: protectedProcedure
+        .input(z.object({ teamId: z.number() }))
+        .input(z.object({ slackMessageConfig: z.string() }))
+        .mutation(async ({ ctx, input }) => {
+            const currentUserId: string = ctx.session.user.id;
+
+            const team: Team | null = await ctx.db.team.findFirst({
+                where: {
+                    teamLead: { id: currentUserId },
+                    id: input.teamId,
+                },
+            });
+
+            if (!team) {
+                throw new Error("Team not found");
+            }
+
+            return ctx.db.team.update({
+                where: {
+                    id: input.teamId,
+                },
+                data: {
+                    slackMessageConfig: input.slackMessageConfig,
+                },
+            });
+        }),
+
     clearRepositoryCache: protectedProcedure
         .input(z.object({ teamId: z.number() }))
         .input(z.object({ path: z.string().min(1) }))

@@ -198,6 +198,39 @@ function AuthTokens() {
                     </li>
                 </ul>
             </p>
+            <p className="text-md mt-4">
+                Slack Instructions
+            </p>
+            <p>
+
+
+                <ul className="list-disc ml-5">
+                    <li>
+                        Create an app from scratch here:&nbsp;
+                        <Link
+                            href="https://api.slack.com/apps?new_app=1"
+                            className="text-blue-500"
+                            target="_blank">
+                            id.atlassian.com/manage-profile/security/api-tokens
+                        </Link>
+                    </li>
+                    <li>
+                        Choose a name (example: prflow.dev)
+                    </li>
+                    <li>
+                        Select your workspace
+                    </li>
+                    <li>
+                        Enable webhooks (see Incoming Webhooks in the left menu)
+                    </li>
+                    <li>
+                        Click &quot;Add new webhook to workspace&quot;
+                    </li>
+                    <li>
+                        Copy webhooks URL
+                    </li>
+                </ul>
+            </p>
             <ul className="my-5">
                 {allAuthTokens?.map((authToken)  => {
                     return (
@@ -259,6 +292,211 @@ function AuthTokens() {
                     >
                         {createAuthToken.isPending ? "Submitting..." : "Add"}
                     </Button>
+                </div>
+            </form>
+        </div>
+    );
+}
+
+type slackMessageConfig = {
+    showAverageTimeToFirstReview: boolean;
+    showMedianTimeToFirstReview: boolean;
+    showAverageCycleTime: boolean;
+    showTeamThroughput: boolean;
+    showCompletedStoryPoints: boolean;
+    showStoryPointsRemaining: boolean;
+    showStoryPointsAddedDuringSprint: boolean;
+    showTaskCycleTime: boolean;
+    showStoryPointsCompletionRate: boolean;
+};
+
+function SlackMessageConfigEditor() {
+    const router = useRouter();
+    const teamId = parseInt(router.query.teamId as string);
+    const { data: dbSlackMessageConfigString, refetch } = api.team.getSlackMessageConfig.useQuery({ teamId });
+
+    const dbSlackMessageConfig = JSON.parse(dbSlackMessageConfigString ?? "{}");
+
+    const utils = api.useUtils();
+
+    const [showAverageTimeToFirstReview, setShowAverageTimeToFirstReview] = React.useState(dbSlackMessageConfig?.showAverageTimeToFirstReview ?? true);
+    const [showMedianTimeToFirstReview, setShowMedianTimeToFirstReview] = React.useState(dbSlackMessageConfig?.showMedianTimeToFirstReview ?? true);
+    const [showAverageCycleTime, setShowAverageCycleTime] = React.useState(dbSlackMessageConfig?.showAverageCycleTime ?? true);
+    const [showTeamThroughput, setShowTeamThroughput] = React.useState(dbSlackMessageConfig?.showTeamThroughput ?? true);
+    const [showCompletedStoryPoints, setShowCompletedStoryPoints] = React.useState(dbSlackMessageConfig?.showCompletedStoryPoints ?? true);
+    const [showStoryPointsRemaining, setShowStoryPointsRemaining] = React.useState(dbSlackMessageConfig?.showStoryPointsRemaining ?? true);
+    const [showStoryPointsAddedDuringSprint, setShowStoryPointsAddedDuringSprint] = React.useState(dbSlackMessageConfig?.showStoryPointsAddedDuringSprint ?? true);
+    const [showTaskCycleTime, setShowTaskCycleTime] = React.useState(dbSlackMessageConfig?.showTaskCycleTime ?? true);
+    const [showStoryPointsCompletionRate, setShowStoryPointsCompletionRate] = React.useState(dbSlackMessageConfig?.showStoryPointsCompletionRate ?? true);
+
+    useEffect(() => {
+        const dbSlackMessageConfig = JSON.parse(dbSlackMessageConfigString ?? "{}");
+
+        setShowAverageTimeToFirstReview(dbSlackMessageConfig?.showAverageTimeToFirstReview);
+        setShowMedianTimeToFirstReview(dbSlackMessageConfig?.showMedianTimeToFirstReview);
+        setShowAverageCycleTime(dbSlackMessageConfig?.showAverageCycleTime);
+        setShowTeamThroughput(dbSlackMessageConfig?.showTeamThroughput);
+        setShowCompletedStoryPoints(dbSlackMessageConfig?.showCompletedStoryPoints);
+        setShowStoryPointsRemaining(dbSlackMessageConfig?.showStoryPointsRemaining);
+        setShowStoryPointsAddedDuringSprint(dbSlackMessageConfig?.showStoryPointsAddedDuringSprint);
+        setShowTaskCycleTime(dbSlackMessageConfig?.showTaskCycleTime);
+        setShowStoryPointsCompletionRate(dbSlackMessageConfig?.showStoryPointsCompletionRate);
+    }, [dbSlackMessageConfigString]);
+
+    const updateSlackMessageConfig = api.team.setSlackMessageConfig.useMutation({
+        onSuccess: async () => {
+            await utils.team.invalidate();
+            await refetch();
+        },
+    });
+
+    const onSubmit = useCallback(() => {
+        const slackMessageConfig: slackMessageConfig = {
+            showAverageTimeToFirstReview,
+            showMedianTimeToFirstReview,
+            showAverageCycleTime,
+            showTeamThroughput,
+            showCompletedStoryPoints,
+            showStoryPointsRemaining,
+            showStoryPointsAddedDuringSprint,
+            showTaskCycleTime,
+            showStoryPointsCompletionRate,
+        };
+
+        updateSlackMessageConfig.mutate({
+            teamId,
+            slackMessageConfig: JSON.stringify(slackMessageConfig)
+        });
+    }, [
+        showAverageTimeToFirstReview,
+        showMedianTimeToFirstReview,
+        showAverageCycleTime,
+        showTeamThroughput,
+        showCompletedStoryPoints,
+        showStoryPointsRemaining,
+        showStoryPointsAddedDuringSprint,
+        showTaskCycleTime,
+        showStoryPointsCompletionRate,
+        updateSlackMessageConfig,
+        teamId,
+    ]);
+
+
+    return (
+        <div className="p-5 m-5 rounded-md border-solid border-2 border-indigo-900 w-3/4 m-auto">
+            <h2 className="text-xl">Slack Message Config</h2>
+            <p className="text-md">
+                This is the content that will be sent to slack.
+            </p>
+            <form
+                onSubmit={(e) => {
+                    e.preventDefault();
+                    onSubmit();
+                }}
+                className="my-5"
+            >
+                <div>
+                    <p className="mt-5">Github stats section</p>
+                    <div>
+                        <Checkbox
+                            isSelected={showAverageTimeToFirstReview}
+                            onChange={(e) => setShowAverageTimeToFirstReview(e.target.checked)}
+                        >
+                            <span className="text-white">
+                                Average Time to First Review
+                            </span>
+                        </Checkbox>
+                    </div>
+                    <div>
+                        <Checkbox
+                            isSelected={showMedianTimeToFirstReview}
+                            onChange={(e) => setShowMedianTimeToFirstReview(e.target.checked)}
+                        >
+                            <span className="text-white">
+                                Median Time to First Review
+                            </span>
+                        </Checkbox>
+                    </div>
+                    <div>
+                        <Checkbox
+                            isSelected={showAverageCycleTime}
+                            onChange={(e) => setShowAverageCycleTime(e.target.checked)}
+                        >
+                            <span className="text-white">
+                                Average Cycle Time
+                            </span>
+                        </Checkbox>
+                    </div>
+                    <div>
+                        <Checkbox
+                            isSelected={showTeamThroughput}
+                            onChange={(e) => setShowTeamThroughput(e.target.checked)}
+                        >
+                            <span className="text-white">
+                                Team Throughput
+                            </span>
+                        </Checkbox>
+                    </div>
+                    <p className="mt-5">Jira stats section</p>
+                    <div>
+                        <Checkbox
+                            isSelected={showCompletedStoryPoints}
+                            onChange={(e) => setShowCompletedStoryPoints(e.target.checked)}
+                        >
+                            <span className="text-white">
+                                Completed Story Points
+                            </span>
+                        </Checkbox>
+                    </div>
+                    <div>
+                        <Checkbox
+                            isSelected={showStoryPointsRemaining}
+                            onChange={(e) => setShowStoryPointsRemaining(e.target.checked)}
+                        >
+                            <span className="text-white">
+                                Story Points Remaining
+                            </span>
+                        </Checkbox>
+                    </div>
+                    <div>
+                        <Checkbox
+                            isSelected={showStoryPointsAddedDuringSprint}
+                            onChange={(e) => setShowStoryPointsAddedDuringSprint(e.target.checked)}
+                        >
+                            <span className="text-white">
+                                Story Points Added During Sprint
+                            </span>
+                        </Checkbox>
+                    </div>
+                    <div>
+                        <Checkbox
+                            isSelected={showTaskCycleTime}
+                            onChange={(e) => setShowTaskCycleTime(e.target.checked)}
+                        >
+                            <span className="text-white">
+                                Task Cycle Time
+                            </span>
+                        </Checkbox>
+                    </div>
+                    <div>
+                        <Checkbox
+                            isSelected={showStoryPointsCompletionRate}
+                            onChange={(e) => setShowStoryPointsCompletionRate(e.target.checked)}
+                        >
+                            <span className="text-white">
+                                Story Points Completion Rate
+                            </span>
+                        </Checkbox>
+                    </div>
+                    <div className="flex">
+                        <Button
+                            type="submit"
+                            className="px-10 py-7 mt-5"
+                            disabled={updateSlackMessageConfig.isPending}
+                        >
+                            {updateSlackMessageConfig.isPending ? "Submitting..." : "Update"}
+                        </Button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -584,6 +822,8 @@ function TeamEditorSuspense() {
             <AuthTokens/>
             <div className="my-10"></div>
             <SlackDaysOfWeekEditor/>
+            <div className="my-10"></div>
+            <SlackMessageConfigEditor/>
             <div className="p-5 m-5 rounded-md border-solid border-2 border-indigo-900">
                 <h2 className="text-xl">Slack Report Test</h2>
                 <SlackReportTestWrapper/>
