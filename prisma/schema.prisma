@@ -24,7 +24,7 @@ model Team {
   lastSlackDate      String
   slackDaysOfWeek    String   @default("1,3") // Days separated by spaces
   slackHour          Int      @default(15)    // UTC hours
-  slackMessageConfig String                   // JSON
+  slackMessageConfig String   @default("{}")  // JSON
 
   teamLeadId       String
   TeamMember       TeamMember[]

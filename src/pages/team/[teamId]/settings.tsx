@@ -441,6 +441,7 @@ function TeamEditor() {
         <div className="p-5 m-5 rounded-md border-solid border-2 border-indigo-900 w-1/2 m-auto">
             <div>
                 <h2 className="text-xl">Members</h2>
+                <p>These are the github handles of your team members.</p>
                 <ul className="my-5">
                     {members?.map((member) => (
                         <li key={member.id} className="flex">

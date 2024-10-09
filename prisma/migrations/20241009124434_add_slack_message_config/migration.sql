@@ -15,7 +15,7 @@ CREATE TABLE "new_Team" (
     "lastSlackDate" TEXT NOT NULL,
     "slackDaysOfWeek" TEXT NOT NULL DEFAULT '1,3',
     "slackHour" INTEGER NOT NULL DEFAULT 15,
-    "slackMessageConfig" TEXT NOT NULL,
+    "slackMessageConfig" TEXT NOT NULL DEFAULT '{}',
     "teamLeadId" TEXT NOT NULL,
     CONSTRAINT "Team_teamLeadId_fkey" FOREIGN KEY ("teamLeadId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
