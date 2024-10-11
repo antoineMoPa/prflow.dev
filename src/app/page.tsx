@@ -1,6 +1,7 @@
 import { Button, Link } from "@nextui-org/react";
 import { HydrateClient } from "../trpc/server";
 import NavBar from "./_components/NavBar";
+import { FaGithub } from "react-icons/fa6";
 
 export default async function Home() {
     return (
@@ -149,6 +150,28 @@ export default async function Home() {
                     </div>
                 </div>
             </section>
+
+            <footer className="bg-gradient-to-b from-[#15162c] to-[#2e026d] text-white">
+                <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16 m-auto">
+                    <p className="text-2xl text-center">
+                        prflow.dev is Open Source
+                    </p>
+                    <p className="text-center">
+                        Find a bug? Open a PR!
+                    </p>
+                    <p className="text-2xl text-center">
+                        <Button
+                            as={Link}
+                            color="success"
+                            className="text-white text-lg p-8"
+                            href="https://github.com/antoineMoPa/prflow.dev"
+                            target="_blank"
+                            startContent={<FaGithub/>}>
+                            View on Github
+                        </Button>
+                    </p>
+                </div>
+            </footer>
         </HydrateClient>
     );
 }
