@@ -261,6 +261,7 @@ export const getTeamStats = async ({
     if (jiraToken && jiraDomain && jiraBoardId && jiraProjectId && jiraUserEmail) {
         try {
             jiraStats = await getJiraTeamStats({
+                team,
                 jiraToken,
                 jiraDomain,
                 jiraProjectId,
@@ -606,13 +607,29 @@ export type GetJiraTeamStats = {
     aggregatedStats?: AggregatedIssueStats,
 }
 
+const doneIssueFilter = (issue: IssueStats) => issue.status?.toLowerCase().includes("done");
+const inProgressIssueFilter = (issue: IssueStats) => issue.status?.toLowerCase().includes("in progress");
+const toDoIssueFilter = (issue: IssueStats) => issue.status?.toLowerCase().includes("to do");
+
+
+/**
+ * Wild things to note about jira
+ * Status is not uniform across all projects
+ * Can be "Done", "Done Recently", "DONE", etc.
+ *
+ * Story points field is not uniform across all projects either.
+ *
+ * So far, I've seen "Story Points" and "Story points estimate".
+ */
 export const getJiraTeamStats = async ({
+    team,
     jiraToken,
     jiraDomain,
     jiraProjectId,
     jiraBoardId,
     jiraUserEmail,
 }: {
+    team: Team,
     jiraToken: string,
     jiraDomain: string,
     jiraProjectId: string,
@@ -669,7 +686,7 @@ export const getJiraTeamStats = async ({
     // JIRA points are stored in a custom field
     // So let's find it.
     const fields = await client.issueFields.getFields();
-    const storyPointsField: string | undefined = Object.values(fields).find((field) => field.name === "Story Points")?.id;
+    const storyPointsField: string | undefined = Object.values(fields).find((field) => field.name === team.jiraStoryPointsFieldName)?.id;
 
 
     // This is a map of issue key to stats that we either get from our cache in DB
@@ -766,14 +783,14 @@ export const getJiraTeamStats = async ({
 
 
         const historiesWithInprogressItems = changelog.histories?.
-            filter((history) => history.items?.some((item) => item.fieldId === "status" && item.toString === "In Progress"));
+            filter((history) => history.items?.some((item) => item.fieldId === "status" && item.toString?.toLowerCase().includes("in progress")));
         const historiesWithDoneItems = changelog.histories?.
-            filter((history) => history.items?.some((item) => item.fieldId === "status" && item.toString === "Done"));
+            filter((history) => history.items?.some((item) => item.fieldId === "status" && item.toString?.toLowerCase().includes("done")));
 
         const firstInProgressTimeString = historiesWithInprogressItems?.[0]?.created;
         const lastDoneTimeString = historiesWithDoneItems?.[historiesWithDoneItems.length - 1]?.created;
 
-        if (status == 'Done') {
+        if (status?.toLowerCase().includes('done')) {
 
             // Compute cycle time
 
@@ -836,15 +853,15 @@ export const getJiraTeamStats = async ({
 
     // Compute aggregated stats
     const completedPoints = Object.values(issueStats)
-        .filter((issue) => issue.status === "Done")
+        .filter(doneIssueFilter)
         .map((issue) => issue.storyPoints)
         .reduce(sumReducer, 0) ?? 0;
     const pointsToDo = Object.values(issueStats)
-        .filter((issue) => issue.status === "To Do")
+        .filter(toDoIssueFilter)
         .map((issue) => issue.storyPoints)
         .reduce(sumReducer, 0) ?? 0;
     const pointsInProgress = Object.values(issueStats)
-        .filter((issue) => issue.status === "In Progress")
+        .filter(inProgressIssueFilter)
         .map((issue) => issue.storyPoints)
         .reduce(sumReducer, 0) ?? 0;
     const allCycleTimes = Object.values(issueStats)

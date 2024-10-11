@@ -298,6 +298,73 @@ function AuthTokens() {
     );
 }
 
+function JiraConfigEditor() {
+    const router = useRouter();
+    const teamId = parseInt(router.query.teamId as string);
+    const { data: dbJiraStoryPointsFieldName, refetch } = api.team.getJiraStoryPointsFieldName.useQuery({ teamId });
+
+    const [jiraStoryPointsFieldName, setJiraStoryPointsFieldName] = React.useState(dbJiraStoryPointsFieldName);
+
+    const utils = api.useUtils();
+
+    const updateJiraStoryPointsFieldName = api.team.setJiraStoryPointsFieldName.useMutation({
+        onSuccess: async () => {
+            await utils.team.invalidate();
+            await refetch();
+        },
+    });
+
+    useEffect(() => {
+        setJiraStoryPointsFieldName(dbJiraStoryPointsFieldName);
+    }, [dbJiraStoryPointsFieldName]);
+
+    return (
+        <div className="p-5 m-5 rounded-md border-solid border-2 border-indigo-900 w-3/4 m-auto">
+            <h2 className="text-xl">Jira Config</h2>
+            <form
+                onSubmit={(e) => {
+                    e.preventDefault();
+                    updateJiraStoryPointsFieldName.mutate({
+                        teamId,
+                        jiraStoryPointsFieldName: jiraStoryPointsFieldName ?? ""
+                    });
+                }}
+                className="my-5"
+            >
+                <div className="flex">
+                    <div className="w-3/4">
+                        <p className="text-md">
+                            Story Points Field Name
+                        </p>
+                        <p>
+                            Some teams use &ldquo;Story Points&rdquo; some use &ldquo;Story points estimate&rdquo;.<br/>
+                            Find yours in any JIRA task detail page and paste it here.
+                        </p>
+                    </div>
+                    <Input
+                        type="text"
+                        label="Jira Story Points Field Name"
+                        onChange={(e) => setJiraStoryPointsFieldName(e.target.value)}
+                        value={jiraStoryPointsFieldName}
+                        className="w-1/4"
+                    />
+                </div>
+                <div>
+                    <Button
+                        type="submit"
+                        className="px-10 py-7 mt-5"
+                        disabled={updateJiraStoryPointsFieldName.isPending}
+                    >
+                        {updateJiraStoryPointsFieldName.isPending ? "Submitting..." : "Update"}
+                    </Button>
+                </div>
+            </form>
+        </div>
+    );
+};
+
+
+
 type slackMessageConfig = {
     showAverageTimeToFirstReview: boolean;
     showMedianTimeToFirstReview: boolean;
@@ -828,6 +895,8 @@ function TeamEditorSuspense() {
             <GithubRepositoriesEditor/>
             <div className="my-10"></div>
             <AuthTokens/>
+            <div className="my-10"></div>
+            <JiraConfigEditor/>
             <div className="my-10"></div>
             <SlackDaysOfWeekEditor/>
             <div className="my-10"></div>

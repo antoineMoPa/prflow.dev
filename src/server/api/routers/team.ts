@@ -328,4 +328,28 @@ export const teamRouter = createTRPCRouter({
 
             return true;
         }),
+
+    getJiraStoryPointsFieldName: protectedProcedure
+        .input(z.object({ teamId: z.number() }))
+        .query(async ({ ctx, input }) => {
+            const { team } = await getTeamAndCheckAdminAccess({ ctx, teamId: input.teamId });
+
+            return team.jiraStoryPointsFieldName;
+        }),
+
+    setJiraStoryPointsFieldName: protectedProcedure
+        .input(z.object({ teamId: z.number() }))
+        .input(z.object({ jiraStoryPointsFieldName: z.string() }))
+        .mutation(async ({ ctx, input }) => {
+            await getTeamAndCheckAdminAccess({ ctx, teamId: input.teamId });
+
+            return ctx.db.team.update({
+                where: {
+                    id: input.teamId,
+                },
+                data: {
+                    jiraStoryPointsFieldName: input.jiraStoryPointsFieldName,
+                },
+            });
+        }),
 });

@@ -31,6 +31,8 @@ model Team {
   AuthToken        AuthToken[]
   GithubRepository GithubRepository[]
 
+  jiraStoryPointsFieldName String @default("Story Points")
+
   @@index([name])
 }
 
