@@ -814,7 +814,7 @@ function TeamEditorSuspense() {
     const { data: hasAdminAccess } = api.team.checkTeamAdminAccess.useQuery({ teamId });
 
     if (!hasAdminAccess) {
-        return <div>You don't have admin access to this team.</div>;
+        return <div>You don&apos;t have admin access to this team.</div>;
     }
 
     if (!session?.data?.user) {
