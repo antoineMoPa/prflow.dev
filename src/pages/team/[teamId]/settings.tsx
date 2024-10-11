@@ -227,7 +227,7 @@ function AuthTokens() {
                         Click &quot;Add new webhook to workspace&quot;
                     </li>
                     <li>
-                        Copy webhooks URL
+                        Copy webhooks URL and paste it here.
                     </li>
                 </ul>
             </p>
