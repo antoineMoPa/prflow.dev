@@ -39,14 +39,22 @@ declare module "next-auth" {
  */
 export const authOptions: NextAuthOptions = {
     callbacks: {
-        session: ({ session, user, token }) => {
+        session: async ({ session, user, token }) => {
+            const dbUser = await db.user.findUnique({
+                where: { id: user.id },
+            });
+
+            if (!dbUser) {
+                throw new Error("User not found in database");
+            }
+
             return {
                 ...session,
                 user: {
                     ...session.user,
                     id: user.id,
                     token: token?.accessToken,
-                    //githubUserName: session.,
+                    isSuperUser: dbUser.isSuperUser ?? false,
                 },
             }
         },

@@ -122,6 +122,7 @@ model User {
   accounts       Account[]
   sessions       Session[]
   Team           Team[]
+  isSuperUser    Boolean   @default(false)
 }
 
 model VerificationToken {

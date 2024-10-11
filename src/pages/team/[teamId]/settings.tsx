@@ -808,6 +808,14 @@ function DangerZone() {
 
 function TeamEditorSuspense() {
     const session = useSession();
+    const router = useRouter();
+    const teamId = parseInt(router.query.teamId as string);
+
+    const { data: hasAdminAccess } = api.team.checkTeamAdminAccess.useQuery({ teamId });
+
+    if (!hasAdminAccess) {
+        return <div>You don't have admin access to this team.</div>;
+    }
 
     if (!session?.data?.user) {
         return <div>loading...</div>;

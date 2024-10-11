@@ -259,13 +259,17 @@ export const getTeamStats = async ({
     let jiraStats: GetJiraTeamStats | undefined = undefined;
 
     if (jiraToken && jiraDomain && jiraBoardId && jiraProjectId && jiraUserEmail) {
-        jiraStats = await getJiraTeamStats({
-            jiraToken,
-            jiraDomain,
-            jiraProjectId,
-            jiraBoardId,
-            jiraUserEmail,
-        })
+        try {
+            jiraStats = await getJiraTeamStats({
+                jiraToken,
+                jiraDomain,
+                jiraProjectId,
+                jiraBoardId,
+                jiraUserEmail,
+            })
+        } catch (e) {
+            console.error('JIRA Stats failed');
+        }
     }
 
     return {
@@ -633,6 +637,14 @@ export const getJiraTeamStats = async ({
             },
         },
     });
+
+    // check if client is working
+    try {
+        await client.myself.getCurrentUser();
+    } catch (e) {
+        console.error("Jira auth unsuccessful");
+        throw e;
+    }
 
     const sprints = await agileClient.board.getAllSprints({
         boardId: parseInt(jiraBoardId),

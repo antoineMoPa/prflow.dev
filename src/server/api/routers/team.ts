@@ -7,23 +7,50 @@ import {
 import { type Team } from "@prisma/client";
 import { generateTeamStatsSlackMessage, sendTeamStats } from "./sendTeamStats";
 
+const getTeamAndCheckAdminAccess = async ({ ctx, teamId }: { ctx: any, teamId: number }) => {
+    const currentUserId: string = ctx.session.user.id;
+
+    if (ctx.session.user.isSuperUser) {
+        const team: Team | null = await ctx.db.team.findFirst({
+            where: {
+                id: teamId,
+            },
+        });
+
+        if (!team) {
+            throw new Error("Team not found");
+        }
+
+        return { team };
+    }
+
+    const team: Team | null = await ctx.db.team.findFirst({
+        where: {
+            teamLead: { id: currentUserId },
+            id: teamId,
+        },
+    });
+
+    if (!team) {
+        throw new Error("Team not found");
+    }
+
+    return { team };
+};
 
 export const teamRouter = createTRPCRouter({
+    checkTeamAdminAccess: protectedProcedure
+        .input(z.object({ teamId: z.number() }))
+        .query(async ({ ctx, input }) => {
+            await getTeamAndCheckAdminAccess({ ctx, teamId: input.teamId });
+
+            return true;
+        }),
+
     sendSlackReport: protectedProcedure
         .input(z.object({ teamId: z.number() }))
         .mutation(async ({ ctx, input }) => {
-            const currentUserId: string = ctx.session.user.id;
-
-            const team: Team | null = await ctx.db.team.findFirst({
-                where: {
-                    teamLead: { id: currentUserId },
-                    id: input.teamId,
-                },
-            });
-
-            if (!team) {
-                throw new Error("Team not found");
-            }
+            const { team } = await getTeamAndCheckAdminAccess({ ctx, teamId: input.teamId });
 
             const slackToken = await ctx.db.authToken.findFirst({
                 where: {
@@ -56,22 +83,28 @@ export const teamRouter = createTRPCRouter({
         }),
 
     get: protectedProcedure
-        .input(z.object({ id: z.number() }))
+        .input(z.object({
+            id: z.number()
+        }))
         .query(async ({ ctx, input }) => {
-        return ctx.db.team.findFirst({
-            where: {
-                teamLead: { id: ctx.session.user.id },
-                id: input.id,
-            },
-        });
-    }),
+            await getTeamAndCheckAdminAccess({ ctx, teamId: input.id });
+
+            return ctx.db.team.findFirst({
+                where: {
+                    id: input.id,
+                },
+            });
+        }),
 
     delete: protectedProcedure
-        .input(z.object({ id: z.number() }))
+        .input(z.object({
+            id: z.number(),
+        }))
         .mutation(async ({ ctx, input }) => {
+            await getTeamAndCheckAdminAccess({ ctx, teamId: input.id });
+
             return ctx.db.team.delete({
                 where: {
-                    teamLead: { id: ctx.session.user.id },
                     id: input.id,
                 },
             });
@@ -80,18 +113,7 @@ export const teamRouter = createTRPCRouter({
     getTeamMembers: protectedProcedure
         .input(z.object({ teamId: z.number() }))
         .query(async ({ ctx, input }) => {
-            const currentUserId: string = ctx.session.user.id;
-
-            const team: Team | null = await ctx.db.team.findFirst({
-                where: {
-                    teamLead: { id: currentUserId },
-                    id: input.teamId,
-                },
-            });
-
-            if (!team) {
-                throw new Error("Team not found");
-            }
+            await getTeamAndCheckAdminAccess({ ctx, teamId: input.teamId });
 
             return ctx.db.teamMember.findMany({
                 where: {
@@ -104,19 +126,7 @@ export const teamRouter = createTRPCRouter({
         .input(z.object({ teamId: z.number() }))
         .input(z.object({ githubUserName: z.string().min(1) }))
         .mutation(async ({ ctx, input }) => {
-            const currentUserId: string = ctx.session.user.id;
-
-            const team: Team | null = await ctx.db.team.findFirst({
-                where: {
-                    teamLead: { id: currentUserId },
-                    id: input.teamId,
-                },
-            });
-
-            if (!team) {
-                throw new Error("Team not found");
-            }
-
+            await getTeamAndCheckAdminAccess({ ctx, teamId: input.teamId });
 
             return ctx
                 .db
@@ -133,18 +143,7 @@ export const teamRouter = createTRPCRouter({
         .input(z.object({ memberId: z.number() }))
         .input(z.object({ teamId: z.number() }))
         .mutation(async ({ ctx, input }) => {
-            const currentUserId: string = ctx.session.user.id;
-
-            const team: Team | null = await ctx.db.team.findFirst({
-                where: {
-                    teamLead: { id: currentUserId },
-                    id: input.teamId,
-                },
-            });
-
-            if (!team) {
-                throw new Error("Team not found");
-            }
+            await getTeamAndCheckAdminAccess({ ctx, teamId: input.teamId });
 
             return ctx.db.teamMember.delete({
                 where: {
@@ -156,18 +155,7 @@ export const teamRouter = createTRPCRouter({
     getAllGithubRepositories: protectedProcedure
         .input(z.object({ teamId: z.number() }))
         .query(async ({ ctx, input }) => {
-            const currentUserId: string = ctx.session.user.id;
-
-            const team: Team | null = await ctx.db.team.findFirst({
-                where: {
-                    teamLead: { id: currentUserId },
-                    id: input.teamId,
-                },
-            });
-
-            if (!team) {
-                throw new Error("Team not found");
-            }
+            await getTeamAndCheckAdminAccess({ ctx, teamId: input.teamId });
 
             return ctx.db.githubRepository.findMany({
                 where: {
@@ -180,19 +168,7 @@ export const teamRouter = createTRPCRouter({
         .input(z.object({ teamId: z.number() }))
         .input(z.object({ path: z.string().min(1) }))
         .mutation(async ({ ctx, input }) => {
-            const currentUserId: string = ctx.session.user.id;
-
-            const team: Team | null = await ctx.db.team.findFirst({
-                where: {
-                    teamLead: { id: currentUserId },
-                    id: input.teamId,
-                },
-            });
-
-            if (!team) {
-                throw new Error("Team not found");
-            }
-
+            await getTeamAndCheckAdminAccess({ ctx, teamId: input.teamId });
 
             return ctx
                 .db
@@ -209,18 +185,7 @@ export const teamRouter = createTRPCRouter({
         .input(z.object({ id: z.number() }))
         .input(z.object({ teamId: z.number() }))
         .mutation(async ({ ctx, input }) => {
-            const currentUserId: string = ctx.session.user.id;
-
-            const team: Team | null = await ctx.db.team.findFirst({
-                where: {
-                    teamLead: { id: currentUserId },
-                    id: input.teamId,
-                },
-            });
-
-            if (!team) {
-                throw new Error("Team not found");
-            }
+            await getTeamAndCheckAdminAccess({ ctx, teamId: input.teamId });
 
             return ctx.db.githubRepository.delete({
                 where: {
@@ -241,19 +206,7 @@ export const teamRouter = createTRPCRouter({
             teamId: z.number(),
         }))
         .query(async ({ ctx, input }) => {
-            const currentUserId: string = ctx.session.user.id;
-
-            const team: Team | null = await ctx.db.team.findFirst({
-                where: {
-                    teamLead: { id: currentUserId },
-                    id: input.teamId,
-                },
-            });
-
-            if (!team) {
-                throw new Error("Team not found");
-            }
-
+            await getTeamAndCheckAdminAccess({ ctx, teamId: input.teamId });
 
             return ctx.db.authToken.findMany({
                 where: {
@@ -272,18 +225,7 @@ export const teamRouter = createTRPCRouter({
             teamId: z.number(),
         }))
         .query(async ({ ctx, input }) => {
-            const currentUserId: string = ctx.session.user.id;
-
-            const team: Team | null = await ctx.db.team.findFirst({
-                where: {
-                    teamLead: { id: currentUserId },
-                    id: input.teamId,
-                },
-            });
-
-            if (!team) {
-                throw new Error("Team not found");
-            }
+            const { team } = await getTeamAndCheckAdminAccess({ ctx, teamId: input.teamId });
 
             return generateTeamStatsSlackMessage({ team });
         }),
@@ -296,18 +238,7 @@ export const teamRouter = createTRPCRouter({
             type: z.string(),
         }))
         .mutation(async ({ ctx, input }) => {
-            const currentUserId: string = ctx.session.user.id;
-
-            const team: Team | null = await ctx.db.team.findFirst({
-                where: {
-                    teamLead: { id: currentUserId },
-                    id: input.teamId,
-                },
-            });
-
-            if (!team) {
-                throw new Error("Team not found");
-            }
+            await getTeamAndCheckAdminAccess({ ctx, teamId: input.teamId });
 
             return ctx.db.authToken.create({
                 data: {
@@ -325,18 +256,7 @@ export const teamRouter = createTRPCRouter({
             teamId: z.number(),
         }))
         .mutation(async ({ ctx, input }) => {
-            const currentUserId: string = ctx.session.user.id;
-
-            const team: Team | null = await ctx.db.team.findFirst({
-                where: {
-                    teamLead: { id: currentUserId },
-                    id: input.teamId,
-                },
-            });
-
-            if (!team) {
-                throw new Error("Team not found");
-            }
+            await getTeamAndCheckAdminAccess({ ctx, teamId: input.teamId });
 
             return ctx.db.authToken.delete({
                 where: {
@@ -349,18 +269,7 @@ export const teamRouter = createTRPCRouter({
     getSlackDaysOfWeek: protectedProcedure
         .input(z.object({ teamId: z.number() }))
         .query(async ({ ctx, input }) => {
-            const currentUserId: string = ctx.session.user.id;
-
-            const team: Team | null = await ctx.db.team.findFirst({
-                where: {
-                    teamLead: { id: currentUserId },
-                    id: input.teamId,
-                },
-            });
-
-            if (!team) {
-                throw new Error("Team not found");
-            }
+            const { team } = await getTeamAndCheckAdminAccess({ ctx, teamId: input.teamId });
 
             return team.slackDaysOfWeek;
         }),
@@ -369,18 +278,7 @@ export const teamRouter = createTRPCRouter({
         .input(z.object({ teamId: z.number() }))
         .input(z.object({ slackDaysOfWeek: z.string() }))
         .mutation(async ({ ctx, input }) => {
-            const currentUserId: string = ctx.session.user.id;
-
-            const team: Team | null = await ctx.db.team.findFirst({
-                where: {
-                    teamLead: { id: currentUserId },
-                    id: input.teamId,
-                },
-            });
-
-            if (!team) {
-                throw new Error("Team not found");
-            }
+            await getTeamAndCheckAdminAccess({ ctx, teamId: input.teamId });
 
             return ctx.db.team.update({
                 where: {
@@ -395,18 +293,7 @@ export const teamRouter = createTRPCRouter({
     getSlackMessageConfig: protectedProcedure
         .input(z.object({ teamId: z.number() }))
         .query(async ({ ctx, input }) => {
-            const currentUserId: string = ctx.session.user.id;
-
-            const team: Team | null = await ctx.db.team.findFirst({
-                where: {
-                    teamLead: { id: currentUserId },
-                    id: input.teamId,
-                },
-            });
-
-            if (!team) {
-                throw new Error("Team not found");
-            }
+            const { team } = await getTeamAndCheckAdminAccess({ ctx, teamId: input.teamId });
 
             return team.slackMessageConfig;
         }),
@@ -415,18 +302,7 @@ export const teamRouter = createTRPCRouter({
         .input(z.object({ teamId: z.number() }))
         .input(z.object({ slackMessageConfig: z.string() }))
         .mutation(async ({ ctx, input }) => {
-            const currentUserId: string = ctx.session.user.id;
-
-            const team: Team | null = await ctx.db.team.findFirst({
-                where: {
-                    teamLead: { id: currentUserId },
-                    id: input.teamId,
-                },
-            });
-
-            if (!team) {
-                throw new Error("Team not found");
-            }
+            await getTeamAndCheckAdminAccess({ ctx, teamId: input.teamId });
 
             return ctx.db.team.update({
                 where: {
@@ -442,18 +318,7 @@ export const teamRouter = createTRPCRouter({
         .input(z.object({ teamId: z.number() }))
         .input(z.object({ path: z.string().min(1) }))
         .mutation(async ({ ctx, input }) => {
-            const currentUserId: string = ctx.session.user.id;
-
-            const team: Team | null = await ctx.db.team.findFirst({
-                where: {
-                    teamLead: { id: currentUserId },
-                    id: input.teamId,
-                },
-            });
-
-            if (!team) {
-                throw new Error("Team not found");
-            }
+            await getTeamAndCheckAdminAccess({ ctx, teamId: input.teamId });
 
             await ctx.db.cache.deleteMany({
                 where: {
