@@ -734,6 +734,8 @@ export const getJiraTeamStats = async ({
             cacheSchemaVersion: JIRA_CACHE_SCHEMA_VERSION
         };
 
+        statsPerIssue[path] = stats;
+
         const cache = JSON.stringify(stats);
 
         await db.cache.upsert({
