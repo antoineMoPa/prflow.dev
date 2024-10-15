@@ -339,17 +339,28 @@ function TeamDashboard() {
     }
 
     if (isError) {
-        return <div className="text-red-500 justify-center">
-                   <p className="text-xl text-center">
-                       Error: {error.message}
-                   </p>
-               </div>;
+        return (
+            <div className="text-red-500 justify-center">
+                <p className="text-xl text-center">
+                    Error: {error.message}
+                </p>
+            </div>
+        );
     }
 
     return (
         <div>
-            <div className="p-5 m-5 rounded-md border-solid border-2 border-indigo-900 w-1/2 m-auto">
+            <div className="p-5 m-5 rounded-md border-solid border-2 border-indigo-900 w-3/4 m-auto relative">
                 <h2 className="text-xl">Your team</h2>
+                <Button
+                    as={Link}
+                    href={`/team/${teamId}/settings`}
+                    className="m-1 absolute top-2 right-2"
+                    startContent={<FaGear/>}
+                    color="default"
+                >
+                    Settings
+                </Button>
                 <ul className="my-5">
                     {(stats?.teamMembers ?? []).map((member) => {
                         return (
@@ -386,15 +397,6 @@ function TeamDashboard() {
                                     color="primary"
                                 >
                                     {repo}
-                                </Button>
-                                <Button
-                                    as={Link}
-                                    href={`/team/${teamId}/settings`}
-                                    className="m-1"
-                                    startContent={<FaGear/>}
-                                    color="default"
-                                >
-                                    Settings
                                 </Button>
                             </h3>
                             {stats?.stats[repo] &&
