@@ -41,7 +41,7 @@ function GithubRepositoriesEditor() {
     });
 
     return (
-        <div className="p-5 m-5 rounded-md border-solid border-2 border-indigo-900 w-1/2 m-auto">
+        <div className="p-5 m-5 rounded-md border-solid border-2 border-indigo-900 w-3/4 m-auto">
             <h2 className="text-xl">Github Repositories</h2>
             <ul className="my-5">
                 {allGithubRepositories?.map((githubRepo)  => {
@@ -796,7 +796,7 @@ function TeamEditor() {
     };
 
     return (
-        <div className="p-5 m-5 rounded-md border-solid border-2 border-indigo-900 w-1/2 m-auto">
+        <div className="p-5 m-5 rounded-md border-solid border-2 border-indigo-900 w-3/4 m-auto">
             <div>
                 <h2 className="text-xl">Members</h2>
                 <p>These are the github handles of your team members.</p>
@@ -852,7 +852,7 @@ function DangerZone() {
     };
 
     return (
-        <div className="p-5 m-5 rounded-md border-solid border-2 border-red-900">
+        <div className="p-5 m-5 rounded-md border-solid border-2 border-red-900 w-3/4 m-auto mb-5">
             <div>
                 <h2 className="text-xl">Danger Zone</h2>
             </div>
@@ -901,7 +901,7 @@ function TeamEditorSuspense() {
             <SlackDaysOfWeekEditor/>
             <div className="my-10"></div>
             <SlackMessageConfigEditor/>
-            <div className="p-5 m-5 rounded-md border-solid border-2 border-indigo-900">
+            <div className="p-5 rounded-md border-solid border-2 border-indigo-900 w-3/4 m-5 mx-auto">
                 <h2 className="text-xl">Slack Report Test</h2>
                 <SlackReportTestWrapper/>
             </div>
