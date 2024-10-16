@@ -43,7 +43,7 @@ export const generateAIComment = async ({
         apiKey: api_key,
     });
     const model = "gpt-4o";
-    const prompt = "Given a statistics JSON, you post a 1-2 sentence summary of how the team's tickets pull requests are flowing along with any notable changes. The AI will generate a comment that you can post in the team's Slack channel. Please mention if any pull request was an outliler and skewed statistics. If notable, please discuss points added mid-sprint, completion rate, cycle time. Provide positive reinforcement if the team is doing well. If the team is not doing well, provide constructive feedback. Make sure to add newlines for readability, but don't try to add links or emojis. Keep the message short and impactful.";
+    const prompt = "Given a statistics JSON, you post a 1-2 sentence summary of how the team's tickets pull requests are flowing along with any notable changes. The AI will generate a comment that you can post in the team's Slack channel. Please mention if any pull request was an outliler and skewed statistics. If notable, please discuss points added mid-sprint, completion rate, cycle time. Provide positive reinforcement if the team is doing well. If the team is not doing well, provide constructive feedback. Make sure to add newlines for readability, but don't try to add links or emojis. Keep the message short and impactful. By the way, most of our time metrics are in hours. Throughput is in PRs per week.";
     const chatCompletion = await client.chat.completions.create({
         model,
         messages: [{
