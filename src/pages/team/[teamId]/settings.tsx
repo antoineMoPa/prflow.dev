@@ -412,7 +412,7 @@ function GoalsConfigEditor() {
                                 ...currentGoals,
                                 avgTimeToFirstReview: {
                                     ...currentGoals.avgTimeToFirstReview,
-                                    value: e.target.value,
+                                    value: parseFloat(e.target.value),
                                 },
                             });
                         }}
@@ -429,7 +429,7 @@ function GoalsConfigEditor() {
                                 ...currentGoals,
                                 medianTimeToFirstReview: {
                                     ...currentGoals.medianTimeToFirstReview,
-                                    value: e.target.value,
+                                    value: parseFloat(e.target.value),
                                 },
                             });
                         }}
@@ -446,7 +446,7 @@ function GoalsConfigEditor() {
                                 ...currentGoals,
                                 avgPullRequestCycleTime: {
                                     ...currentGoals.avgPullRequestCycleTime,
-                                    value: e.target.value,
+                                    value: parseFloat(e.target.value),
                                 },
                             });
                         }}
@@ -464,7 +464,7 @@ function GoalsConfigEditor() {
                                 ...currentGoals,
                                 throughputPRsPerMember: {
                                     ...currentGoals.throughputPRsPerMember,
-                                    value: e.target.value,
+                                    value: parseFloat(e.target.value),
                                 },
                             });
                         }}
