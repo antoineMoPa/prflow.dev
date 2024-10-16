@@ -2,6 +2,7 @@ import { Team,  } from "@prisma/client";
 import { getTeamStats } from "./getTeamStats";
 import { env } from "../../../env";
 import { OpenAI } from "openai";
+import { extendGoalsWithDefaults } from "../../../lib/goals";
 
 const displayDuration = (hours: number) => {
     // if under one hour, show minutes count
@@ -74,26 +75,10 @@ export const generateTeamStatsSlackMessage = async ({
         showStoryPointsCompletionRate,
     } = JSON.parse(team.slackMessageConfig ?? "{}");
 
+    const goals = extendGoalsWithDefaults(JSON.parse(team.teamGoalsConfig ?? "{}"));
+
     const { githubStats, jiraStats } = await getTeamStats({ team });
     const { stats, teamMembers } = githubStats;
-    const goals = {
-        avgTimeToFirstReview: {
-            value: 1,
-            valueShouldBe: 'lower' as const,
-        },
-        medianTimeToFirstReview: {
-            value: 1,
-            valueShouldBe: 'lower' as const,
-        },
-        avgPullRequestCycleTime: {
-            value: 24,
-            valueShouldBe: 'lower' as const,
-        },
-        throughputPRs: {
-            value: teamMembers.length * 5, // 1 PRs per day per team member makes sense.
-            valueShouldBe: 'higher' as const,
-        },
-    }
 
     const message: string[] = [];
 
@@ -138,8 +123,12 @@ export const generateTeamStatsSlackMessage = async ({
                 currentWeekThroughput,
                 lastWeekThroughput,
                 "Team Throughput",
-                num => `${num.toFixed(1)} PRs/week`,
-                { goal: goals.throughputPRs },
+                num => `${num.toFixed(1)} PRs/week`, {
+                    goal: {
+                        ...goals.throughputPRsPerMember,
+                        value: goals.throughputPRsPerMember.value * teamMembers.length,
+                    }
+                },
             ));
     }
 

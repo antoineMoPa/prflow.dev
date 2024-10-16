@@ -266,6 +266,30 @@ export const teamRouter = createTRPCRouter({
             });
         }),
 
+    getTeamGoalConfig: protectedProcedure
+        .input(z.object({ teamId: z.number() }))
+        .query(async ({ ctx, input }) => {
+            const { team } = await getTeamAndCheckAdminAccess({ ctx, teamId: input.teamId });
+
+            return team.teamGoalsConfig;
+        }),
+
+    setTeamGoalConfig: protectedProcedure
+        .input(z.object({ teamId: z.number() }))
+        .input(z.object({ teamGoalsConfig: z.string() }))
+        .mutation(async ({ ctx, input }) => {
+            await getTeamAndCheckAdminAccess({ ctx, teamId: input.teamId });
+
+            return ctx.db.team.update({
+                where: {
+                    id: input.teamId,
+                },
+                data: {
+                    teamGoalsConfig: input.teamGoalsConfig,
+                },
+            });
+        }),
+
     getSlackDaysOfWeek: protectedProcedure
         .input(z.object({ teamId: z.number() }))
         .query(async ({ ctx, input }) => {

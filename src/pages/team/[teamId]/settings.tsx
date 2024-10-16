@@ -9,6 +9,7 @@ import React, { useCallback, useEffect } from 'react';
 import { FaRegTrashCan } from 'react-icons/fa6';
 import Link from 'next/link';
 import { FaRedo } from 'react-icons/fa';
+import { extendGoalsWithDefaults } from '../../../lib/goals';
 
 function GithubRepositoriesEditor() {
     const router = useRouter();
@@ -363,6 +364,125 @@ function JiraConfigEditor() {
     );
 };
 
+function GoalsConfigEditor() {
+    const router = useRouter();
+    const teamId = parseInt(router.query.teamId as string);
+    const { data: dbTeamGoalConfig, refetch } = api.team.getTeamGoalConfig.useQuery({ teamId });
+    const goals = extendGoalsWithDefaults(JSON.parse(dbTeamGoalConfig ?? "{}"));
+    const utils = api.useUtils();
+
+    const { isPending, mutate } = api.team.setTeamGoalConfig.useMutation({
+        onSuccess: async () => {
+            await utils.team.invalidate();
+            await refetch();
+        },
+    });
+
+    const [currentGoals, setGoals] = React.useState(goals);
+
+    const onSubmit = React.useCallback(() => {
+        mutate({
+            teamId,
+            teamGoalsConfig: JSON.stringify(currentGoals),
+        });
+    }, [teamId, currentGoals, mutate]);
+
+    useEffect(() => {
+        setGoals(extendGoalsWithDefaults(JSON.parse(dbTeamGoalConfig ?? "{}")));
+    }, [dbTeamGoalConfig]);
+
+    return (
+        <div className="p-5 m-5 rounded-md border-solid border-2 border-indigo-900 w-3/4 m-auto">
+            <h2 className="text-xl">Goals Config</h2>
+            <form
+                onSubmit={(e) => {
+                    e.preventDefault();
+                    onSubmit();
+                }}
+                className="my-5"
+            >
+                <div>
+                    <Input
+                        type="number"
+                        label="Average Time to First Review (hours)"
+                        value={currentGoals.avgTimeToFirstReview.value}
+                        className="mb-1 w-80"
+                        onChange={(e) => {
+                            setGoals({
+                                ...currentGoals,
+                                avgTimeToFirstReview: {
+                                    ...currentGoals.avgTimeToFirstReview,
+                                    value: e.target.value,
+                                },
+                            });
+                        }}
+                    />
+                </div>
+                <div>
+                    <Input
+                        type="number"
+                        label="Median Time to First Review (hours)"
+                        value={currentGoals.medianTimeToFirstReview.value}
+                        className="mb-1 w-80"
+                        onChange={(e) => {
+                            setGoals({
+                                ...currentGoals,
+                                medianTimeToFirstReview: {
+                                    ...currentGoals.medianTimeToFirstReview,
+                                    value: e.target.value,
+                                },
+                            });
+                        }}
+                    />
+                </div>
+                <div>
+                    <Input
+                        type="number"
+                        label="Average Pull Request Cycle Time (hours)"
+                        value={currentGoals.avgPullRequestCycleTime.value}
+                        className="mb-1 w-80"
+                        onChange={(e) => {
+                            setGoals({
+                                ...currentGoals,
+                                avgPullRequestCycleTime: {
+                                    ...currentGoals.avgPullRequestCycleTime,
+                                    value: e.target.value,
+                                },
+                            });
+                        }}
+                    />
+                </div>
+                <div>
+                    <Input
+                        type="number"
+                        label="Throughput PRs Per Member (per week)"
+
+                        value={currentGoals.throughputPRsPerMember.value}
+                        className="mb-1 w-80"
+                        onChange={(e) => {
+                            setGoals({
+                                ...currentGoals,
+                                throughputPRsPerMember: {
+                                    ...currentGoals.throughputPRsPerMember,
+                                    value: e.target.value,
+                                },
+                            });
+                        }}
+                    />
+                </div>
+                <div>
+                    <Button
+                        type="submit"
+                        className="px-10 py-7 mt-5"
+                        disabled={isPending}
+                    >
+                        {isPending ? "Submitting..." : "Update"}
+                    </Button>
+                </div>
+            </form>
+        </div>
+    );
+}
 
 
 type slackMessageConfig = {
@@ -743,7 +863,7 @@ function SlackReportTest() {
             <h2 className="my-2 mt-4">Slack Message Preview</h2>
             <p>This is the content we send to slack.</p>
             <p>The ai-generated comment will vary.</p>
-            <pre className="bg-white p-2 rounded-md border-solid border-2 border-indigo-900 text-black">
+            <pre className="bg-white p-2 rounded-md border-solid border-2 border-indigo-900 text-black overflow-scroll">
                 {exampleSlackMessage?.join("\n")}
             </pre>
         </div>
@@ -897,6 +1017,8 @@ function TeamEditorSuspense() {
             <AuthTokens/>
             <div className="my-10"></div>
             <JiraConfigEditor/>
+            <div className="my-10"></div>
+            <GoalsConfigEditor/>
             <div className="my-10"></div>
             <SlackDaysOfWeekEditor/>
             <div className="my-10"></div>
