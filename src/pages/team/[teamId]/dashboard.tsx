@@ -308,7 +308,7 @@ function JiraStats(
                     </TableRow>
                     <TableRow>
                         <TableCell className="text-left">Average Cycle Time</TableCell>
-                        <TableCell className="text-right">{jiraStats.aggregatedStats?.averageCycleTime.toFixed(2)}</TableCell>
+                        <TableCell className="text-right">{jiraStats.aggregatedStats?.averageCycleTime?.toFixed(2)}</TableCell>
                         <TableCell className="text-right">hours</TableCell>
                     </TableRow>
                 </TableBody>

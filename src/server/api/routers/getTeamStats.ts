@@ -602,7 +602,7 @@ export type AggregatedIssueStats = {
     issuesAddedMidSprint: { key: string, points: number, link: string }[],
     sprintTimePassedRatio: number | null,
     pointsCompletionRate: number,
-    averageCycleTime: number, // hours
+    averageCycleTime: number | null, // hours
 }
 
 export type GetJiraTeamStats = {
@@ -843,14 +843,14 @@ export const getJiraTeamStats = async ({
 
             if (latestSprintModification
                 && latestSprintModification > sprintStartDate.getTime()) {
-                aggregatedStats.pointsAddedMidSprint += issueStats[key].storyPoints ?? 0;
-            }
+                    aggregatedStats.pointsAddedMidSprint += issueStats[key].storyPoints ?? 0;
 
-            aggregatedStats.issuesAddedMidSprint.push({
-                key: issue.issueDetail.key,
-                points: issueStats[key].storyPoints ?? 0,
-                link: `${jiraDomain}/browse/${issue.issueDetail.key}`,
-            });
+                    aggregatedStats.issuesAddedMidSprint.push({
+                        key: issue.issueDetail.key,
+                        points: issueStats[key].storyPoints ?? 0,
+                        link: `${jiraDomain}/browse/${issue.issueDetail.key}`,
+                    });
+            }
         }
     }
 
@@ -877,7 +877,8 @@ export const getJiraTeamStats = async ({
     aggregatedStats.sprintTimePassedRatio = sprintTimePassedRatio;
     aggregatedStats.pointsCompletionRate = pointsCompletionRate;
 
-    const averageCycleTime = (allCycleTimes.reduce(sumReducer, 0) ?? 0) / allCycleTimes.length;
+    const averageCycleTime = allCycleTimes.length == 0 ? null:
+        (allCycleTimes.reduce(sumReducer, 0) ?? 0) / allCycleTimes.length;
 
     aggregatedStats.completedPoints = completedPoints;
     aggregatedStats.pointsToDo = pointsToDo;
