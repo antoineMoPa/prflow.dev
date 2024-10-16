@@ -507,6 +507,9 @@ export const getGithubTeamStats = async ({
                     console.log(`PR is older than 2 weeks; skipping`);
                     return false;
                 }
+                if (!teamMembers.includes(pull.author)) {
+                    return false;
+                }
                 return true;
             })
         );
