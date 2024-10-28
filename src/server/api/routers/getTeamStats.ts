@@ -869,11 +869,14 @@ export const getJiraTeamStats = async ({
         .filter(inProgressIssueFilter)
         .map((issue) => issue.storyPoints)
         .reduce(sumReducer, 0) ?? 0;
+    const totalPoints = Object.values(issueStats)
+        .map((issue) => issue.storyPoints)
+        .reduce(sumReducer, 0) ?? 0;
     const allCycleTimes = Object.values(issueStats)
         .map((issue) => issue.cycleTime)
         .filter(cycleTime => cycleTime);
 
-    const pointsCompletionRate = completedPoints / (pointsToDo + pointsInProgress);
+    const pointsCompletionRate = completedPoints / totalPoints;
     aggregatedStats.sprintTimePassedRatio = sprintTimePassedRatio;
     aggregatedStats.pointsCompletionRate = pointsCompletionRate;
 
