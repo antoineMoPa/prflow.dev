@@ -520,6 +520,9 @@ export const getGithubTeamStats = async ({
         const currentWeekPullStats = Object.values(currentReportPullStats)
             .filter(pull => new Date(pull.created_at).getTime() > ONE_WEEK_AGO);
 
+        // debugging
+        console.log({ currentWeekPullStats })
+
         // Review Time
         const timesToFirstReview = Object.values(currentReportPullStats)
             .filter(pull => pull.reviewer !== null)
