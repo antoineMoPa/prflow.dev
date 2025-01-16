@@ -160,6 +160,34 @@ export const generateTeamStatsSlackMessage = async ({
         }
     }
 
+    // Find PR count leaders of the week
+    let AuthorToPRMap = {};
+    Object.values(githubStats.stats).forEach((repo) => {
+        Object.values(repo.pullStats).forEach((pr) => {
+            let created_at = new Date(pr.created_at);
+
+            if (created_at < new Date(new Date().setDate(new Date().getDate() - 7))) {
+                return;
+            }
+
+            // fill in the map
+            if (AuthorToPRMap[pr.author]) {
+                AuthorToPRMap[pr.author] += 1;
+            } else {
+                AuthorToPRMap[pr.author] = 1;
+            }
+        });
+    });
+
+    if (Object.keys(AuthorToPRMap).length > 0) {
+        // Print the top 3 PR count leaders
+        message.push("\n\n:trophy: *Top PR count leaders of the week* :trophy:");
+        const sortedAuthors = Object.keys(AuthorToPRMap).sort((a, b) => AuthorToPRMap[b] - AuthorToPRMap[a]);
+        for (let i = 0; i < Math.min(3, sortedAuthors.length); i++) {
+            message.push(`${i+1}. ${sortedAuthors[i]}: ${AuthorToPRMap[sortedAuthors[i]]} PRs`);
+        }
+    }
+
     // Let's wrap open ai part in try/catch in case we run out of credits.
     try {
         const aiComment = await generateAIComment({ stats: { githubStats, jiraStats }});
