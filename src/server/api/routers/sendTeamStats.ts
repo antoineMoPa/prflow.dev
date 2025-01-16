@@ -181,7 +181,7 @@ export const generateTeamStatsSlackMessage = async ({
 
     if (Object.keys(AuthorToPRMap).length > 0) {
         // Print the top 3 PR count leaders
-        message.push("\n\n:trophy: *Top PR count leaders of the week* :trophy:");
+        message.push("\n\n:trophy: *Top PR count leaders of the last 7 days* :trophy:");
         const sortedAuthors = Object.keys(AuthorToPRMap).sort((a, b) => AuthorToPRMap[b] - AuthorToPRMap[a]);
         for (let i = 0; i < Math.min(3, sortedAuthors.length); i++) {
             message.push(`${i+1}. ${sortedAuthors[i]}: ${AuthorToPRMap[sortedAuthors[i]]} PRs`);
